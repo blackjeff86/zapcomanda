@@ -155,6 +155,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const initialStatus = payment_method === "pix" ? "awaiting_payment" : "preparing";
+
     return NextResponse.json(
       {
         order_id: order.id,
@@ -162,6 +164,8 @@ export async function POST(request: NextRequest) {
         total,
         delivery_fee: deliveryFee,
         payment_method,
+        delivery_type: parsed.data.delivery_type,
+        status: initialStatus,
         pix_copy_paste: pixCopyPaste,
       },
       { status: 201 }

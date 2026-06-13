@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { PaymentMethod } from "@/types/database";
 
 type Addon = { id: string; name: string; price: number; is_active: boolean };
@@ -51,11 +51,22 @@ type CheckoutForm = {
   paymentMethod: PaymentMethod;
 };
 
+type OrderStatus =
+  | "awaiting_payment"
+  | "paid"
+  | "preparing"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled";
+
 type OrderResult = {
   order_id: string;
   order_ref: string;
   total: number;
   delivery_fee: number;
+  payment_method: PaymentMethod;
+  delivery_type: "pickup" | "delivery";
+  status: OrderStatus;
   pix_copy_paste: string | null;
 };
 
@@ -107,8 +118,32 @@ export default function CardapioClient({
   });
   const [processing, setProcessing] = useState(false);
   const [orderResult, setOrderResult] = useState<OrderResult | null>(null);
+  const [liveStatus, setLiveStatus] = useState<OrderStatus | null>(null);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Poll order status every 10 seconds after order is placed
+  useEffect(() => {
+    if (!orderResult) return;
+    setLiveStatus(orderResult.status);
+
+    const TERMINAL = new Set(["delivered", "cancelled"]);
+    if (TERMINAL.has(orderResult.status)) return;
+
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/cardapio/orders/${orderResult.order_id}/status`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setLiveStatus(data.status);
+        if (TERMINAL.has(data.status)) clearInterval(id);
+      } catch {
+        // ignore network errors, try again next tick
+      }
+    }, 10_000);
+
+    return () => clearInterval(id);
+  }, [orderResult]);
 
   // Derived cart values
   const cartTotal = cart.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
@@ -235,6 +270,7 @@ export default function CardapioClient({
       if (!res.ok) throw new Error(data.error ?? "Erro ao enviar pedido");
 
       setOrderResult(data);
+      setLiveStatus(data.status);
       setScreen("confirmed");
     } catch (err) {
       setOrderError(err instanceof Error ? err.message : "Erro ao enviar pedido");
@@ -803,97 +839,227 @@ export default function CardapioClient({
             )}
 
             {/* Confirmation screen */}
-            {screen === "confirmed" && orderResult && (
-              <div className="space-y-6 p-6 text-center">
-                <div>
-                  <div
-                    className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full text-3xl text-white"
-                    style={{ backgroundColor: brand }}
-                  >
-                    ✓
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900">Pedido recebido!</h2>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Pedido #{orderResult.order_ref}
-                  </p>
-                </div>
+            {screen === "confirmed" && orderResult && (() => {
+              const currentStatus = liveStatus ?? orderResult.status;
+              const isPix = orderResult.payment_method === "pix";
+              const isDelivery = orderResult.delivery_type === "delivery";
+              const isCancelled = currentStatus === "cancelled";
 
-                <div className="space-y-1 rounded-2xl border border-gray-100 bg-gray-50 p-4 text-left">
-                  {cart.map((item) => (
-                    <div key={item.id}>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-700">
-                          {item.quantity}× {item.name}
-                        </span>
-                        <span className="font-medium text-gray-900">
-                          {fmt(item.unitPrice * item.quantity)}
-                        </span>
+              const STATUS_ORDER: OrderStatus[] = [
+                "awaiting_payment",
+                "paid",
+                "preparing",
+                "out_for_delivery",
+                "delivered",
+              ];
+
+              type Step = { key: OrderStatus; label: string; icon: string };
+              const allSteps: Step[] = [
+                { key: "awaiting_payment", label: "Aguardando pagamento", icon: "⏳" },
+                { key: "paid", label: "Pagamento confirmado", icon: "✅" },
+                { key: "preparing", label: "Em preparação", icon: "👨‍🍳" },
+                {
+                  key: "out_for_delivery",
+                  label: isDelivery ? "Saiu para entrega" : "Pronto para retirada",
+                  icon: isDelivery ? "🛵" : "🎁",
+                },
+                {
+                  key: "delivered",
+                  label: isDelivery ? "Entregue" : "Retirado",
+                  icon: "🎉",
+                },
+              ];
+
+              const steps = isPix
+                ? allSteps
+                : allSteps.filter((s) => s.key !== "awaiting_payment" && s.key !== "paid");
+
+              const currentIdx = STATUS_ORDER.indexOf(currentStatus);
+
+              function stepState(step: Step) {
+                const stepIdx = STATUS_ORDER.indexOf(step.key);
+                if (currentIdx > stepIdx) return "done";
+                if (currentIdx === stepIdx) return "current";
+                return "pending";
+              }
+
+              return (
+                <div className="space-y-5 p-5">
+                  {/* Header */}
+                  <div className="text-center">
+                    {isCancelled ? (
+                      <>
+                        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-2xl">
+                          ❌
+                        </div>
+                        <h2 className="text-lg font-bold text-gray-900">Pedido cancelado</h2>
+                        <p className="mt-1 text-sm text-gray-500">Pedido #{orderResult.order_ref}</p>
+                      </>
+                    ) : currentStatus === "delivered" ? (
+                      <>
+                        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-2xl">
+                          🎉
+                        </div>
+                        <h2 className="text-lg font-bold text-gray-900">
+                          {isDelivery ? "Pedido entregue!" : "Pedido retirado!"}
+                        </h2>
+                        <p className="mt-1 text-sm text-gray-500">Obrigado pela preferência!</p>
+                      </>
+                    ) : (
+                      <>
+                        <div
+                          className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white"
+                          style={{ backgroundColor: brand }}
+                        >
+                          ✓
+                        </div>
+                        <h2 className="text-lg font-bold text-gray-900">Pedido #{orderResult.order_ref}</h2>
+                        <p className="mt-1 text-xs text-gray-400">Atualizado automaticamente</p>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Status timeline */}
+                  {!isCancelled && (
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                      <div className="space-y-3">
+                        {steps.map((step, i) => {
+                          const state = stepState(step);
+                          return (
+                            <div key={step.key} className="flex items-start gap-3">
+                              {/* Connector line + circle */}
+                              <div className="flex flex-col items-center">
+                                <div
+                                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm transition-all duration-500 ${
+                                    state === "done"
+                                      ? "bg-green-100 text-green-700"
+                                      : state === "current"
+                                      ? "text-white shadow-md"
+                                      : "bg-gray-100 text-gray-400"
+                                  }`}
+                                  style={
+                                    state === "current" ? { backgroundColor: brand } : {}
+                                  }
+                                >
+                                  {state === "done" ? "✓" : step.icon}
+                                </div>
+                                {i < steps.length - 1 && (
+                                  <div
+                                    className={`mt-1 w-0.5 flex-1 transition-all duration-500 ${
+                                      state === "done" ? "bg-green-200" : "bg-gray-200"
+                                    }`}
+                                    style={{ height: "16px" }}
+                                  />
+                                )}
+                              </div>
+                              {/* Label */}
+                              <div className="pt-1">
+                                <p
+                                  className={`text-sm font-medium transition-all duration-300 ${
+                                    state === "done"
+                                      ? "text-green-700"
+                                      : state === "current"
+                                      ? "text-gray-900"
+                                      : "text-gray-400"
+                                  }`}
+                                >
+                                  {step.label}
+                                </p>
+                                {state === "current" && (
+                                  <p className="mt-0.5 text-xs text-gray-400">
+                                    {step.key === "awaiting_payment"
+                                      ? "Pague via Pix para confirmar"
+                                      : step.key === "preparing"
+                                      ? "Seu pedido está sendo preparado"
+                                      : step.key === "out_for_delivery"
+                                      ? isDelivery
+                                        ? "A caminho do seu endereço"
+                                        : "Pode vir buscar seu pedido!"
+                                      : ""}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                      {(item.selectedAddons.length > 0 || item.notes) && (
-                        <p className="mb-1 text-xs text-gray-400">
-                          {[
-                            item.selectedAddons.map((a) => a.name).join(", "),
-                            item.notes,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                  {orderResult.delivery_fee > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Taxa de entrega</span>
-                      <span className="text-gray-700">
-                        {fmt(orderResult.delivery_fee)}
-                      </span>
                     </div>
                   )}
-                  <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-bold text-gray-900">
-                    <span>Total</span>
-                    <span>{fmt(orderResult.total)}</span>
-                  </div>
-                </div>
 
-                {orderResult.pix_copy_paste && (
-                  <div className="space-y-3 rounded-2xl border border-green-100 bg-green-50 p-4 text-left">
-                    <p className="text-sm font-semibold text-green-800">
-                      Pague agora via Pix para confirmar o pedido
-                    </p>
-                    <div className="rounded-xl border border-green-200 bg-white px-3 py-2">
-                      <p className="break-all font-mono text-xs leading-relaxed text-gray-600">
-                        {orderResult.pix_copy_paste}
+                  {/* PIX code */}
+                  {orderResult.pix_copy_paste && currentStatus === "awaiting_payment" && (
+                    <div className="space-y-3 rounded-2xl border border-green-100 bg-green-50 p-4">
+                      <p className="text-sm font-semibold text-green-800">
+                        Pague agora via Pix para confirmar o pedido
                       </p>
+                      <div className="rounded-xl border border-green-200 bg-white px-3 py-2">
+                        <p className="break-all font-mono text-xs leading-relaxed text-gray-600">
+                          {orderResult.pix_copy_paste}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={copyPix}
+                        className="w-full rounded-xl py-3 text-sm font-bold text-white"
+                        style={{ backgroundColor: brand }}
+                      >
+                        {copied ? "Copiado!" : "Copiar código Pix"}
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={copyPix}
-                      className="w-full rounded-xl py-3 text-sm font-bold text-white"
-                      style={{ backgroundColor: brand }}
-                    >
-                      {copied ? "Copiado!" : "Copiar código Pix"}
-                    </button>
+                  )}
+
+                  {/* Order summary */}
+                  <div className="space-y-1 rounded-2xl border border-gray-100 bg-white p-4">
+                    {cart.map((item) => (
+                      <div key={item.id}>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-700">
+                            {item.quantity}× {item.name}
+                          </span>
+                          <span className="font-medium text-gray-900">
+                            {fmt(item.unitPrice * item.quantity)}
+                          </span>
+                        </div>
+                        {(item.selectedAddons.length > 0 || item.notes) && (
+                          <p className="mb-1 text-xs text-gray-400">
+                            {[
+                              item.selectedAddons.map((a) => a.name).join(", "),
+                              item.notes,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                    {orderResult.delivery_fee > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Taxa de entrega</span>
+                        <span className="text-gray-700">{fmt(orderResult.delivery_fee)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-bold text-gray-900">
+                      <span>Total</span>
+                      <span>{fmt(orderResult.total)}</span>
+                    </div>
                   </div>
-                )}
 
-                <p className="text-sm text-gray-500">
-                  Você receberá atualizações no WhatsApp conforme o pedido avança.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCart([]);
-                    setOrderResult(null);
-                    setScreen("menu");
-                  }}
-                  className="text-sm font-medium"
-                  style={{ color: brand }}
-                >
-                  Fazer outro pedido
-                </button>
-              </div>
-            )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCart([]);
+                      setOrderResult(null);
+                      setLiveStatus(null);
+                      setScreen("menu");
+                    }}
+                    className="w-full text-center text-sm font-medium"
+                    style={{ color: brand }}
+                  >
+                    Fazer outro pedido
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
