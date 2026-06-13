@@ -128,24 +128,48 @@ export default function CardapioClient({
   const CUSTOMER_KEY = `zapcomanda_customer_${establishment.id}`;
   const CUSTOMER_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-  // Restore saved customer data on mount
+  function openMyOrders() {
+    setShowMyOrders(true);
+    window.location.hash = "meus-pedidos";
+  }
+
+  function closeMyOrders() {
+    setShowMyOrders(false);
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+  }
+
+  // Restore saved customer data + sync panel state with URL hash
   useEffect(() => {
+    // Pre-fill checkout from localStorage
     try {
       const raw = localStorage.getItem(CUSTOMER_KEY);
-      if (!raw) return;
-      const saved = JSON.parse(raw) as { name: string; phone: string; savedAt: number };
-      if (Date.now() - saved.savedAt > CUSTOMER_TTL) {
-        localStorage.removeItem(CUSTOMER_KEY);
-        return;
+      if (raw) {
+        const saved = JSON.parse(raw) as { name: string; phone: string; savedAt: number };
+        if (Date.now() - saved.savedAt > CUSTOMER_TTL) {
+          localStorage.removeItem(CUSTOMER_KEY);
+        } else {
+          setCheckout((prev) => ({
+            ...prev,
+            name: saved.name || prev.name,
+            phone: saved.phone || prev.phone,
+          }));
+        }
       }
-      setCheckout((prev) => ({
-        ...prev,
-        name: saved.name || prev.name,
-        phone: saved.phone || prev.phone,
-      }));
     } catch {
       // private browsing or quota exceeded — ignore
     }
+
+    // Open panel if URL hash is already #meus-pedidos (e.g. after page refresh)
+    if (window.location.hash === "#meus-pedidos") {
+      setShowMyOrders(true);
+    }
+
+    // Sync panel when user presses browser back/forward
+    function onHashChange() {
+      setShowMyOrders(window.location.hash === "#meus-pedidos");
+    }
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -354,7 +378,7 @@ export default function CardapioClient({
         <h1 className="flex-1 text-base font-bold text-white">{establishment.name}</h1>
         <button
           type="button"
-          onClick={() => setShowMyOrders(true)}
+          onClick={() => openMyOrders()}
           className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/30"
         >
           <span>📋</span>
@@ -635,7 +659,7 @@ export default function CardapioClient({
             slug={establishment.slug}
             brand={brand}
             initialPhone={checkout.phone}
-            onClose={() => setShowMyOrders(false)}
+            onClose={() => closeMyOrders()}
           />
         </div>
       )}
@@ -1124,7 +1148,7 @@ export default function CardapioClient({
 
                   <button
                     type="button"
-                    onClick={() => setShowMyOrders(true)}
+                    onClick={() => openMyOrders()}
                     className="w-full rounded-xl py-3 text-sm font-semibold text-white"
                     style={{ backgroundColor: brand }}
                   >
