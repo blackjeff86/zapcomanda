@@ -22,21 +22,18 @@ const features = [
     description:
       "Ideal pra marmita e confeitaria: define o que está pronto hoje e pronto. O cliente só vê o que tem — sem confusão com item esgotado.",
     tag: "Cardápio do dia",
-    pro: true,
   },
   {
     title: "Horário de corte",
     description:
       "Pedidos aceitos só até o horário que você definir. Depois do corte, o cardápio encerra automaticamente — sem precisar recusar um por um.",
     tag: "Operação",
-    pro: true,
   },
   {
     title: "Cupons de desconto",
     description:
       "Crie cupons para promoções e fidelização. O cliente aplica na hora do pedido e você controla tudo pelo painel.",
     tag: "Marketing",
-    pro: true,
   },
 ];
 
@@ -61,15 +58,10 @@ export default function Features() {
               key={feature.title}
               className="group rounded-2xl border border-gray-200 bg-white p-6 transition hover:border-brand/30 hover:shadow-lg hover:shadow-brand/5"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center">
                 <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
                   {feature.tag}
                 </span>
-                {feature.pro && (
-                  <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-                    Plano Pro
-                  </span>
-                )}
               </div>
               <h3 className="mt-4 text-lg font-bold text-gray-900 group-hover:text-brand">
                 {feature.title}

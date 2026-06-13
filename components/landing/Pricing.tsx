@@ -4,13 +4,17 @@ const plans = [
   {
     name: "Básico",
     price: "49",
-    description: "Para quem está começando — tudo que precisa para receber pedidos e organizar o caixa.",
+    description: "Todas as funcionalidades — ideal para quem está começando.",
+    limit: "Até 25 produtos no cardápio",
     features: [
-      "Cardápio digital ilimitado",
+      "Cardápio digital (até 25 produtos)",
       "Link próprio do restaurante",
       "Pedidos online pelo celular",
       "Pix automático",
       "Painel de pedidos em tempo real",
+      "Cardápio do dia",
+      "Horário de corte de pedidos",
+      "Cupons de desconto",
       "Histórico e faturamento do dia",
     ],
     cta: "Começar com o Básico",
@@ -19,13 +23,18 @@ const plans = [
   {
     name: "Pro",
     price: "79",
-    description: "Para quem quer mais controle — cardápio do dia, horário de corte e cupons incluídos.",
+    description: "Tudo do Básico — sem limite de produtos no cardápio.",
+    limit: "Produtos ilimitados",
     features: [
-      "Tudo do plano Básico",
+      "Cardápio digital ilimitado",
+      "Link próprio do restaurante",
+      "Pedidos online pelo celular",
+      "Pix automático",
+      "Painel de pedidos em tempo real",
       "Cardápio do dia",
       "Horário de corte de pedidos",
       "Cupons de desconto",
-      "Relatório semanal",
+      "Histórico e faturamento do dia",
     ],
     cta: "Começar com o Pro",
     highlighted: true,
@@ -68,7 +77,14 @@ export default function Pricing() {
               <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
               <p className="mt-2 text-sm text-gray-600">{plan.description}</p>
 
-              <div className="mt-6 flex items-baseline gap-1">
+              <div className={`mt-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${plan.highlighted ? "bg-brand/10 text-brand" : "bg-gray-100 text-gray-600"}`}>
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
+                </svg>
+                {plan.limit}
+              </div>
+
+              <div className="mt-5 flex items-baseline gap-1">
                 <span className="text-sm font-medium text-gray-500">R$</span>
                 <span className="text-5xl font-extrabold tracking-tight text-gray-900">
                   {plan.price}
