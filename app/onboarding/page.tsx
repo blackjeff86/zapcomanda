@@ -13,8 +13,7 @@ export default function OnboardingPage() {
           Bem-vindo ao <span className="text-green-600">ZapComanda</span>
         </h1>
         <p className="mt-2 text-gray-600">
-          Configure seu negócio em poucos minutos e comece a receber pedidos pelo
-          WhatsApp
+          Configure seu negócio em poucos minutos e comece a receber pedidos online
         </p>
       </div>
 
