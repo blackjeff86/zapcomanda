@@ -4,7 +4,7 @@ const plans = [
   {
     name: "Básico",
     price: "49",
-    description: "Para lanchonetes, esfihas e sanduíches — comece a receber pedidos online hoje.",
+    description: "Para quem está começando — tudo que precisa para receber pedidos e organizar o caixa.",
     features: [
       "Cardápio digital ilimitado",
       "Link próprio do restaurante",
@@ -19,7 +19,7 @@ const plans = [
   {
     name: "Pro",
     price: "79",
-    description: "Para marmitaria, quentinha ou doces — com controle de cardápio e ferramentas de crescimento.",
+    description: "Para quem quer mais controle — cardápio do dia, horário de corte e cupons incluídos.",
     features: [
       "Tudo do plano Básico",
       "Cardápio do dia",
