@@ -108,8 +108,9 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Establishment creation error:", error);
+    const msg = error instanceof Error ? error.message : JSON.stringify(error);
     return NextResponse.json(
-      { error: "Erro interno ao criar estabelecimento" },
+      { error: "Erro interno ao criar estabelecimento", detail: msg },
       { status: 500 }
     );
   }

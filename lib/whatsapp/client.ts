@@ -34,7 +34,22 @@ function getProvider(): WhatsAppProvider {
 }
 
 function normalizePhone(phone: string): string {
+  if (phone.includes("@")) return phone;
   return phone.replace(/\D/g, "");
+}
+
+async function resolveLid(lid: string, baseUrl: string, apiKey: string, instance: string): Promise<string> {
+  try {
+    const res = await fetch(`${baseUrl}/contact/findContacts/${instance}`, {
+      headers: { apikey: apiKey },
+    });
+    if (!res.ok) return lid;
+    const contacts: Array<Record<string, string>> = await res.json();
+    if (!Array.isArray(contacts)) return lid;
+    const match = contacts.find((c) => c.id === lid || c.lid === lid);
+    if (match?.id && !match.id.endsWith("@lid")) return match.id.split("@")[0];
+  } catch {}
+  return lid;
 }
 
 export async function sendText({
@@ -54,20 +69,19 @@ export async function sendText({
       throw new Error("Evolution API não configurada");
     }
 
-    const response = await fetch(
-      `${baseUrl}/message/sendText/${instance}`,
-      {
+    const sendTo = async (number: string) =>
+      fetch(`${baseUrl}/message/sendText/${instance}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: apiKey,
-        },
-        body: JSON.stringify({
-          number: normalizedPhone,
-          text: message,
-        }),
-      }
-    );
+        headers: { "Content-Type": "application/json", apikey: apiKey },
+        body: JSON.stringify({ number, textMessage: { text: message } }),
+      });
+
+    let response = await sendTo(normalizedPhone);
+
+    if (!response.ok && normalizedPhone.endsWith("@lid")) {
+      const resolved = await resolveLid(normalizedPhone, baseUrl, apiKey, instance);
+      if (resolved !== normalizedPhone) response = await sendTo(resolved);
+    }
 
     if (!response.ok) {
       const error = await response.text();

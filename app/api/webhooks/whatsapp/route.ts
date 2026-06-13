@@ -21,10 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, skipped: true });
     }
 
-    // Process asynchronously to respond quickly to the webhook provider
-    handleIncomingMessage(message).catch((err) => {
-      console.error("WhatsApp handler error:", err);
-    });
+    await handleIncomingMessage(message);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

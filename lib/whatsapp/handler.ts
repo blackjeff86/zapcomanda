@@ -64,11 +64,34 @@ function instanceId(establishment: Establishment): string | undefined {
 
 async function getEstablishment(instance?: string): Promise<Establishment | null> {
   const supabase = createAdminClient();
+
+  // Try primary instance_id match first
   let query = supabase.from("establishments").select("*");
   if (instance) query = query.eq("whatsapp_instance_id", instance);
   const { data, error } = await query.limit(1).maybeSingle();
   if (error) throw error;
-  return data;
+  if (data) return data;
+
+  // If not found by primary, check the secondary instances table (Pro plan)
+  if (instance) {
+    const { data: instanceRow } = await supabase
+      .from("whatsapp_instances")
+      .select("establishment_id")
+      .eq("instance_id", instance)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (instanceRow) {
+      const { data: est } = await supabase
+        .from("establishments")
+        .select("*")
+        .eq("id", instanceRow.establishment_id)
+        .maybeSingle();
+      return est ?? null;
+    }
+  }
+
+  return null;
 }
 
 async function getOrCreateSession(
@@ -618,10 +641,16 @@ async function finalizeOrderWithPayment(
   const payOnDelivery = isPayOnDelivery(paymentMethod);
   const initialStatus = payOnDelivery ? "paid" : "awaiting_payment";
 
+  const customerName = session.metadata?.customerName as string | undefined;
+
   const { data: customer, error: customerError } = await supabase
     .from("customers")
     .upsert(
-      { establishment_id: establishment.id, phone: session.phone },
+      {
+        establishment_id: establishment.id,
+        phone: session.phone,
+        ...(customerName ? { name: customerName } : {}),
+      },
       { onConflict: "establishment_id,phone" }
     )
     .select("*")
@@ -691,10 +720,16 @@ async function finalizeOrderWithPayment(
     cart: [],
   });
 
-  let pixMessage =
+  const confirmMessage =
     `✅ Pedido #${orderRef} registrado!\n\n` +
     `${summary}\n\n` +
-    `${totals}\n\n`;
+    `${totals}`;
+
+  await sendText({
+    phone: session.phone,
+    message: confirmMessage,
+    instanceId: instanceId(establishment),
+  });
 
   try {
     const { pixCopyPaste } = await createOrderPixPayment({
@@ -706,21 +741,31 @@ async function finalizeOrderWithPayment(
       orderRef,
     });
 
-    pixMessage +=
-      `💳 *Pague via Pix (R$ ${total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}):*\n\n` +
-      `\`\`\`${pixCopyPaste}\`\`\`\n\n` +
-      `Copie o código acima e cole no app do seu banco. ` +
-      `Quando o estabelecimento confirmar o pagamento, avisaremos que seu pedido está em preparo.`;
+    await sendText({
+      phone: session.phone,
+      message: `💳 *Pague via Pix — R$ ${total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}*\n\nCopie o código abaixo e cole no app do banco:`,
+      instanceId: instanceId(establishment),
+    });
+
+    await sendText({
+      phone: session.phone,
+      message: pixCopyPaste,
+      instanceId: instanceId(establishment),
+    });
+
+    await sendText({
+      phone: session.phone,
+      message: `Quando o estabelecimento confirmar o pagamento, avisaremos que seu pedido está em preparo.`,
+      instanceId: instanceId(establishment),
+    });
   } catch (pixError) {
     console.error("Pix generation error:", pixError);
-    pixMessage += `Não foi possível gerar o Pix agora. Entre em contato com o estabelecimento.`;
+    await sendText({
+      phone: session.phone,
+      message: `Não foi possível gerar o Pix agora. Entre em contato com o estabelecimento.`,
+      instanceId: instanceId(establishment),
+    });
   }
-
-  await sendText({
-    phone: session.phone,
-    message: pixMessage,
-    instanceId: instanceId(establishment),
-  });
 }
 
 async function handleConfirmation(
@@ -778,10 +823,17 @@ export async function handleIncomingMessage(message: IncomingMessage): Promise<v
     return;
   }
 
-  const session = await getOrCreateSession(establishment.id, message.phone);
+  let session = await getOrCreateSession(establishment.id, message.phone);
   const menuItems = await getActiveMenu(establishment);
   const text = message.text;
   const buttonId = message.buttonId || "";
+
+  if (message.customerName && session.metadata?.customerName !== message.customerName) {
+    await updateSession(session.id, {
+      metadata: { ...session.metadata, customerName: message.customerName },
+    });
+    session = { ...session, metadata: { ...session.metadata, customerName: message.customerName } };
+  }
 
   if (GREETINGS.some((g) => text.includes(g))) {
     await handleGreeting(establishment, session, menuItems);

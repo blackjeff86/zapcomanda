@@ -167,6 +167,16 @@ export interface Payment {
   updated_at: string;
 }
 
+export interface WhatsAppInstance {
+  id: string;
+  establishment_id: string;
+  instance_id: string;
+  label: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface WhatsAppSession {
   id: string;
   establishment_id: string;

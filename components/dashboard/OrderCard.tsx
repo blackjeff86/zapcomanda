@@ -26,11 +26,15 @@ function formatTime(date: string) {
   });
 }
 
-function formatPhone(phone: string) {
+function formatPhone(phone: string): string | null {
+  if (phone.includes("@")) return null;
   const digits = phone.replace(/\D/g, "");
   const local = digits.startsWith("55") ? digits.slice(2) : digits;
   if (local.length === 11) {
     return local.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+  }
+  if (local.length === 10) {
+    return local.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
   }
   return phone;
 }
@@ -48,12 +52,12 @@ export default function OrderCard({
   const prevStatus = getPrevOrderStatus(order.status);
   const prevLabel = prevStatus ? ORDER_STATUS_UI[prevStatus].shortLabel : null;
 
+  const rawPhone = order.customers.phone;
+  const isLidJid = rawPhone?.includes("@");
   const customerName = order.customers.name || "Cliente";
-  const customerPhone = order.customers.phone
-    ? formatPhone(order.customers.phone)
-    : null;
-  const whatsappUrl = order.customers.phone
-    ? `https://wa.me/${order.customers.phone.replace(/\D/g, "")}`
+  const customerPhone = rawPhone && !isLidJid ? formatPhone(rawPhone) : null;
+  const whatsappUrl = rawPhone && !isLidJid
+    ? `https://wa.me/${rawPhone.replace(/\D/g, "")}`
     : null;
 
   const [confirmDialog, setConfirmDialog] = useState<{

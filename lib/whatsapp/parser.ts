@@ -4,6 +4,7 @@ export interface IncomingMessage {
   instanceId?: string;
   buttonId?: string;
   isFromMe: boolean;
+  customerName?: string;
 }
 
 function extractPhoneFromJid(jid: string): string {
@@ -29,7 +30,8 @@ export function parseWebhookPayload(body: unknown): IncomingMessage | null {
     if (!key || key.fromMe) return null;
 
     const remoteJid = key.remoteJid as string;
-    const phone = extractPhoneFromJid(remoteJid);
+    // Use full JID for LID-based contacts (@lid), extract number for regular contacts
+    const phone = remoteJid.endsWith("@lid") ? remoteJid : extractPhoneFromJid(remoteJid);
 
     let text = "";
     let buttonId: string | undefined;
@@ -52,12 +54,15 @@ export function parseWebhookPayload(body: unknown): IncomingMessage | null {
 
     if (!text && !buttonId) return null;
 
+    const customerName = data.pushName ? String(data.pushName).trim() : undefined;
+
     return {
       phone,
       text: normalizeText(text),
       buttonId,
       instanceId: String(payload.instance || ""),
       isFromMe: false,
+      customerName: customerName || undefined,
     };
   }
 

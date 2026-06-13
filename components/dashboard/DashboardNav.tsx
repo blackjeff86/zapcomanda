@@ -4,9 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Pedidos", icon: "orders" },
-  { href: "/dashboard/menu", label: "Cardápio", icon: "menu" },
-  { href: "/dashboard/settings", label: "Configurações", icon: "settings" },
+  { href: "/dashboard", label: "Pedidos", icon: "orders", pro: false },
+  { href: "/dashboard/menu", label: "Cardápio", icon: "menu", pro: false },
+  { href: "/dashboard/relatorio", label: "Relatório", icon: "report", pro: true },
+  { href: "/dashboard/broadcast", label: "Broadcast", icon: "broadcast", pro: true },
+  { href: "/dashboard/settings", label: "Configurações", icon: "settings", pro: false },
 ] as const;
 
 function NavIcon({ icon }: { icon: string }) {
@@ -21,6 +23,20 @@ function NavIcon({ icon }: { icon: string }) {
     return (
       <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    );
+  }
+  if (icon === "report") {
+    return (
+      <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    );
+  }
+  if (icon === "broadcast") {
+    return (
+      <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
       </svg>
     );
   }
@@ -55,7 +71,12 @@ export function DashboardSidebarNav() {
             }`}
           >
             <NavIcon icon={item.icon} />
-            {item.label}
+            <span className="flex-1">{item.label}</span>
+            {item.pro && (
+              <span className="shrink-0 rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-700">
+                Pro
+              </span>
+            )}
           </Link>
         );
       })}
@@ -74,13 +95,18 @@ export function DashboardMobileNav() {
           <Link
             key={item.href}
             href={item.href}
-            className={`shrink-0 rounded-lg px-3 py-2 text-xs font-medium transition ${
+            className={`shrink-0 flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition ${
               active
                 ? "bg-brand text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             {item.label}
+            {item.pro && !active && (
+              <span className="rounded-full bg-violet-100 px-1 py-0.5 text-[9px] font-bold uppercase text-violet-700">
+                Pro
+              </span>
+            )}
           </Link>
         );
       })}

@@ -13,8 +13,9 @@ import {
   PIX_KEY_TYPE_LABELS,
   type PixKeyType,
 } from "@/lib/payments/pix-key";
-import { canUseOrderCutoff } from "@/lib/plans/features";
+import { canUseOrderCutoff, isProPlan } from "@/lib/plans/features";
 import type { Establishment } from "@/types/database";
+import WhatsAppInstancesManager from "@/components/dashboard/WhatsAppInstancesManager";
 
 function formatCategory(category: string) {
   return category === "quentinha" ? "Quentinha / Marmita" : "Lanchonete";
@@ -45,6 +46,7 @@ export default function SettingsForm({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const hasOrderCutoff = canUseOrderCutoff(establishment.plan);
+  const isPro = isProPlan(establishment.plan);
   const acceptsPix = form.accepted_payment_methods.includes("pix");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -383,6 +385,26 @@ export default function SettingsForm({
           Eventos: mensagens recebidas. O bot usa o número cadastrado acima para identificar seu
           estabelecimento.
         </p>
+
+        {isPro ? (
+          <div className="mt-5 border-t border-gray-100 pt-5">
+            <h4 className="text-sm font-semibold text-gray-800">2º número de WhatsApp</h4>
+            <p className="mt-1 text-xs text-gray-500">
+              Adicione um segundo número para atender por dois canais diferentes.
+            </p>
+            <div className="mt-3">
+              <WhatsAppInstancesManager />
+            </div>
+          </div>
+        ) : (
+          <div className="mt-5 border-t border-gray-100 pt-5">
+            <ProFeatureUpsell
+              title="2 números de WhatsApp — plano Pro"
+              description="Use um segundo número para separar canais (ex.: loja e delivery)."
+              compact
+            />
+          </div>
+        )}
       </div>
 
       <PlanSettingsCollapsible establishment={establishment} devMock={devMock} />
