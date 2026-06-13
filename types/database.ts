@@ -103,6 +103,8 @@ export interface MenuItem {
   is_active: boolean;
   is_daily: boolean;
   is_combo: boolean;
+  combo_partner_id: string | null;
+  combo_price: number | null;
   sort_order: number;
   created_at: string;
   updated_at: string;

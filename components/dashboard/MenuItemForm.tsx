@@ -3,6 +3,8 @@
 import type { MenuItemFormState } from "@/lib/menu/form";
 import ImageUpload from "@/components/ui/ImageUpload";
 
+type AvailableItem = { id: string; name: string; price: number };
+
 interface MenuItemFormProps {
   title: string;
   form: MenuItemFormState;
@@ -13,6 +15,11 @@ interface MenuItemFormProps {
   error?: string | null;
   submitLabel?: string;
   showDailyToggle?: boolean;
+  availableItems?: AvailableItem[];
+}
+
+function fmt(value: number) {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 export default function MenuItemForm({
@@ -25,6 +32,7 @@ export default function MenuItemForm({
   error,
   submitLabel = "Salvar",
   showDailyToggle = false,
+  availableItems = [],
 }: MenuItemFormProps) {
   function updateField<K extends keyof MenuItemFormState>(
     key: K,
@@ -34,10 +42,7 @@ export default function MenuItemForm({
   }
 
   function addAddon() {
-    onChange({
-      ...form,
-      addons: [...form.addons, { name: "", price: "" }],
-    });
+    onChange({ ...form, addons: [...form.addons, { name: "", price: "" }] });
   }
 
   function updateAddon(index: number, field: "name" | "price", value: string) {
@@ -47,11 +52,23 @@ export default function MenuItemForm({
   }
 
   function removeAddon(index: number) {
+    onChange({ ...form, addons: form.addons.filter((_, i) => i !== index) });
+  }
+
+  function toggleCombo(checked: boolean) {
     onChange({
       ...form,
-      addons: form.addons.filter((_, i) => i !== index),
+      is_combo: checked,
+      combo_partner_id: checked ? form.combo_partner_id : "",
+      combo_price: checked ? form.combo_price : "",
     });
   }
+
+  const partnerItem = availableItems.find((i) => i.id === form.combo_partner_id);
+  const itemPrice = Number(form.price) || 0;
+  const comboPrice = Number(form.combo_price) || 0;
+  const normalTotal = partnerItem ? itemPrice + partnerItem.price : 0;
+  const savings = normalTotal > 0 && comboPrice > 0 ? normalTotal - comboPrice : 0;
 
   return (
     <form
@@ -151,22 +168,85 @@ export default function MenuItemForm({
         )}
 
         <div className="sm:col-span-2">
-          <label className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <input
-              type="checkbox"
-              checked={form.is_combo}
-              onChange={(e) => updateField("is_combo", e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
-            />
-            <span>
-              <span className="block text-sm font-medium text-gray-900">
-                Combo
+          <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                checked={form.is_combo}
+                onChange={(e) => toggleCombo(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+              />
+              <span>
+                <span className="block text-sm font-medium text-gray-900">
+                  Oferecer como combo
+                </span>
+                <span className="mt-0.5 block text-xs text-gray-500">
+                  Cliente pode levar este item + outro produto por um preço especial.
+                </span>
               </span>
-              <span className="mt-0.5 block text-xs text-gray-500">
-                Marque quando este item combina prato + bebida ou outros itens em preço único (ex: marmita + suco = R$ 25).
-              </span>
-            </span>
-          </label>
+            </label>
+
+            {form.is_combo && (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Segundo produto do combo
+                  </label>
+                  {availableItems.length === 0 ? (
+                    <p className="rounded-lg bg-white px-3 py-2.5 text-sm text-gray-400 border border-gray-200">
+                      Adicione outros itens ao cardápio primeiro para poder criar um combo.
+                    </p>
+                  ) : (
+                    <select
+                      value={form.combo_partner_id}
+                      onChange={(e) => updateField("combo_partner_id", e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                    >
+                      <option value="">Selecione o produto…</option>
+                      {availableItems.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name} ({fmt(item.price)})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Preço do combo (R$)
+                  </label>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    placeholder="Ex: 25.00"
+                    value={form.combo_price}
+                    onChange={(e) => updateField("combo_price", e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                  />
+                </div>
+
+                {partnerItem && comboPrice > 0 && (
+                  <div className="sm:col-span-2 rounded-lg bg-white border border-orange-100 px-3 py-2.5">
+                    <p className="text-xs text-gray-600">
+                      <span className="font-medium">{form.name || "Este item"}</span>
+                      {" "}({fmt(itemPrice)}) + <span className="font-medium">{partnerItem.name}</span>
+                      {" "}({fmt(partnerItem.price)}) ={" "}
+                      <span className="line-through text-gray-400">{fmt(normalTotal)}</span>
+                      {" → "}
+                      <span className="font-bold text-orange-700">Combo {fmt(comboPrice)}</span>
+                      {savings > 0 && (
+                        <span className="ml-1 text-green-700 font-medium">
+                          (cliente economiza {fmt(savings)})
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -244,6 +244,11 @@ export default function MenuManager({
           error={createError}
           submitLabel="Salvar item"
           showDailyToggle={showDailyToggle}
+          availableItems={items.filter((i) => i.is_active).map((i) => ({
+            id: i.id,
+            name: i.name,
+            price: i.price,
+          }))}
         />
       )}
 
@@ -278,6 +283,9 @@ export default function MenuManager({
                       error={editError}
                       submitLabel="Salvar alterações"
                       showDailyToggle={showDailyToggle}
+                      availableItems={items
+                        .filter((i) => i.id !== item.id && i.is_active)
+                        .map((i) => ({ id: i.id, name: i.name, price: i.price }))}
                     />
                   ) : (
                     <div
@@ -306,9 +314,10 @@ export default function MenuManager({
                                 Cardápio do dia
                               </span>
                             )}
-                            {item.is_combo && (
+                            {item.combo_partner_id && (
                               <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
-                                Combo
+                                Combo: {items.find((i) => i.id === item.combo_partner_id)?.name ?? "Combo"}
+                                {item.combo_price != null && ` · ${formatCurrency(item.combo_price)}`}
                               </span>
                             )}
                           </div>

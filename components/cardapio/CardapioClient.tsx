@@ -12,7 +12,8 @@ type MenuItem = {
   price: number;
   photo_url: string | null;
   category: string;
-  is_combo: boolean;
+  combo_partner_id: string | null;
+  combo_price: number | null;
   sort_order: number;
   menu_item_addons: Addon[];
 };
@@ -94,6 +95,7 @@ export default function CardapioClient({
   const [modalQty, setModalQty] = useState(1);
   const [modalNotes, setModalNotes] = useState("");
   const [modalAddons, setModalAddons] = useState<Set<string>>(new Set());
+  const [modalCombo, setModalCombo] = useState(false);
 
   // Checkout
   const [checkout, setCheckout] = useState<CheckoutForm>({
@@ -134,13 +136,26 @@ export default function CardapioClient({
         .reduce((s, a) => s + Number(a.price), 0),
     [activeAddons, modalAddons]
   );
-  const modalUnitPrice = modalItem ? Number(modalItem.price) + modalAddonTotal : 0;
+  const comboPartner = useMemo(
+    () =>
+      modalItem?.combo_partner_id
+        ? menuItems.find((i) => i.id === modalItem.combo_partner_id) ?? null
+        : null,
+    [modalItem, menuItems]
+  );
+  const modalBasePrice = useMemo(() => {
+    if (!modalItem) return 0;
+    if (modalCombo && modalItem.combo_price != null) return Number(modalItem.combo_price);
+    return Number(modalItem.price);
+  }, [modalItem, modalCombo]);
+  const modalUnitPrice = modalBasePrice + modalAddonTotal;
 
   function openModal(item: MenuItem) {
     setModalItem(item);
     setModalQty(1);
     setModalNotes("");
     setModalAddons(new Set());
+    setModalCombo(false);
   }
 
   function closeModal() {
@@ -162,10 +177,15 @@ export default function CardapioClient({
       .filter((a) => modalAddons.has(a.id))
       .map((a) => ({ id: a.id, name: a.name, price: Number(a.price) }));
 
+    const itemName =
+      modalCombo && comboPartner
+        ? `${modalItem.name} + ${comboPartner.name} (Combo)`
+        : modalItem.name;
+
     const newItem: CartItem = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       menuItemId: modalItem.id,
-      name: modalItem.name,
+      name: itemName,
       unitPrice: modalUnitPrice,
       quantity: modalQty,
       notes: modalNotes.trim(),
@@ -298,7 +318,7 @@ export default function CardapioClient({
                 <div>
                   <div className="flex flex-wrap items-center gap-1.5">
                     <p className="font-semibold text-gray-900 leading-tight">{item.name}</p>
-                    {item.is_combo && (
+                    {item.combo_partner_id && (
                       <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
                         Combo
                       </span>
@@ -375,14 +395,7 @@ export default function CardapioClient({
 
             <div className="space-y-4 p-5">
               <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-bold text-gray-900">{modalItem.name}</h2>
-                  {modalItem.is_combo && (
-                    <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
-                      Combo
-                    </span>
-                  )}
-                </div>
+                <h2 className="text-lg font-bold text-gray-900">{modalItem.name}</h2>
                 {modalItem.description && (
                   <p className="mt-1 text-sm text-gray-500">{modalItem.description}</p>
                 )}
@@ -390,6 +403,59 @@ export default function CardapioClient({
                   {fmt(Number(modalItem.price))}
                 </p>
               </div>
+
+              {/* Combo option */}
+              {comboPartner && modalItem.combo_price != null && (
+                <button
+                  type="button"
+                  onClick={() => setModalCombo((v) => !v)}
+                  className={`w-full rounded-2xl border-2 p-4 text-left transition ${
+                    modalCombo
+                      ? "border-orange-400 bg-orange-50"
+                      : "border-gray-200 bg-gray-50 hover:border-orange-200"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                        modalCombo
+                          ? "border-orange-500 bg-orange-500"
+                          : "border-gray-300"
+                      }`}
+                    >
+                      {modalCombo && (
+                        <div className="h-2 w-2 rounded-full bg-white" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-gray-900">
+                        Combo: inclua {comboPartner.name}
+                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
+                        <span>{fmt(Number(modalItem.price))}</span>
+                        <span>+</span>
+                        <span>{fmt(Number(comboPartner.price))}</span>
+                        <span className="text-gray-400">=</span>
+                        <span className="line-through text-gray-400">
+                          {fmt(Number(modalItem.price) + Number(comboPartner.price))}
+                        </span>
+                        <span className="font-bold text-orange-700">
+                          → {fmt(Number(modalItem.combo_price))}
+                        </span>
+                        {Number(modalItem.price) + Number(comboPartner.price) > Number(modalItem.combo_price) && (
+                          <span className="rounded-full bg-green-100 px-1.5 py-0.5 font-medium text-green-700">
+                            economize {fmt(
+                              Number(modalItem.price) +
+                              Number(comboPartner.price) -
+                              Number(modalItem.combo_price)
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              )}
 
               {/* Addons */}
               {activeAddons.length > 0 && (

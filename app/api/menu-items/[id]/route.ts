@@ -10,7 +10,6 @@ import { z } from "zod";
 const patchSchema = menuItemSchema.partial().extend({
   is_active: z.boolean().optional(),
   is_daily: z.boolean().optional(),
-  is_combo: z.boolean().optional(),
 });
 
 const MENU_SELECT = "*, menu_item_addons(*)";
@@ -49,7 +48,8 @@ export async function PATCH(
     if (parsed.data.photo_url !== undefined)
       updates.photo_url = parsed.data.photo_url || null;
     if (parsed.data.is_active !== undefined) updates.is_active = parsed.data.is_active;
-    if (parsed.data.is_combo !== undefined) updates.is_combo = parsed.data.is_combo;
+    if ("combo_partner_id" in parsed.data) updates.combo_partner_id = parsed.data.combo_partner_id ?? null;
+    if ("combo_price" in parsed.data) updates.combo_price = parsed.data.combo_price ?? null;
     if (parsed.data.is_daily !== undefined) {
       if (
         parsed.data.is_daily &&

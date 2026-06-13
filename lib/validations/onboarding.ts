@@ -11,6 +11,8 @@ export const menuItemSchema = z.object({
   price: z.coerce.number().min(0.01, "Preço deve ser maior que zero"),
   category: z.string().min(1, "Categoria é obrigatória"),
   photo_url: z.string().url().optional().or(z.literal("")),
+  combo_partner_id: z.string().uuid().nullable().optional(),
+  combo_price: z.coerce.number().min(0).nullable().optional(),
   addons: z.array(menuItemAddonSchema).optional().default([]),
 });
 
