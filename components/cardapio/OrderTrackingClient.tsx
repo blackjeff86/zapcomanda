@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import PublicFooter from "@/components/public/PublicFooter";
+import CashChangeSummary from "@/components/orders/CashChangeSummary";
 
 type OrderStatus =
   | "awaiting_payment"
@@ -35,6 +36,8 @@ type Order = {
   total_amount: number;
   delivery_fee: number;
   payment_method: PaymentMethod;
+  cash_tender_amount: number | null;
+  change_amount: number | null;
   created_at: string;
   order_items: OrderItem[];
 };
@@ -169,6 +172,14 @@ export default function OrderTrackingClient({
             </div>
           </div>
         </div>
+
+        {order.payment_method === "cash" && order.cash_tender_amount != null && (
+          <CashChangeSummary
+            total={order.total_amount}
+            cashTenderAmount={order.cash_tender_amount}
+            changeAmount={order.change_amount}
+          />
+        )}
 
         {/* Status timeline */}
         <div className="rounded-2xl border border-gray-100 bg-white p-4">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import CopyDeliveryLink from "@/components/dashboard/CopyDeliveryLink";
 import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
+import CashChangeSummary from "@/components/orders/CashChangeSummary";
 import OrderStepper, { OrderStatusBanner } from "@/components/dashboard/OrderStepper";
 import {
   isPayOnDelivery,
@@ -224,6 +225,16 @@ export default function OrderCard({
             </div>
           )}
         </div>
+
+        {order.payment_method === "cash" && order.cash_tender_amount != null && (
+          <div className="mt-3">
+            <CashChangeSummary
+              total={Number(order.total_amount)}
+              cashTenderAmount={order.cash_tender_amount}
+              changeAmount={order.change_amount}
+            />
+          </div>
+        )}
 
         {order.delivered_at && order.status === "delivered" && (
           <p className="mt-2 text-xs text-gray-500">

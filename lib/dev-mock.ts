@@ -54,6 +54,8 @@ export function getDevMockOrders(): OrderRow[] {
       delivery_token: "dev-token-carlos-entrega",
       delivery_photo_url: null,
       delivery_confirmed_by: null,
+      cash_tender_amount: 50,
+      change_amount: 7,
       customers: { phone: "5511988776655", name: "Carlos Silva" },
       notes: "Entregar no portão azul",
       order_items: [
@@ -85,6 +87,8 @@ export function getDevMockOrders(): OrderRow[] {
       delivery_token: null,
       delivery_photo_url: null,
       delivery_confirmed_by: null,
+      cash_tender_amount: null,
+      change_amount: null,
       customers: { phone: "5511977665544", name: "Ana Paula" },
       notes: null,
       order_items: [
@@ -119,6 +123,8 @@ export function getDevMockOrders(): OrderRow[] {
       delivery_token: null,
       delivery_photo_url: null,
       delivery_confirmed_by: null,
+      cash_tender_amount: null,
+      change_amount: null,
       customers: { phone: "5511966554433", name: "João Mendes" },
       notes: null,
       order_items: [
@@ -143,6 +149,8 @@ export function getDevMockOrders(): OrderRow[] {
       delivery_token: null,
       delivery_photo_url: null,
       delivery_confirmed_by: "owner",
+      cash_tender_amount: null,
+      change_amount: null,
       customers: { phone: "5511955443322", name: "Fernanda" },
       notes: null,
       order_items: [
@@ -167,6 +175,8 @@ export function getDevMockOrders(): OrderRow[] {
       delivery_token: null,
       delivery_photo_url: null,
       delivery_confirmed_by: "delivery_link",
+      cash_tender_amount: null,
+      change_amount: null,
       customers: { phone: "5511944332211", name: null },
       notes: null,
       order_items: [

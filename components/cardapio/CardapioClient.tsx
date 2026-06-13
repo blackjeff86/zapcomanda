@@ -7,8 +7,11 @@ import {
   groupMenuItemsByCategory,
 } from "@/lib/menu/group-by-category";
 import { matchesSearchAny } from "@/lib/search/match-text";
+import { isPayOnDelivery } from "@/lib/payments/methods";
 import SearchInput from "@/components/shared/SearchInput";
 import PublicFooter from "@/components/public/PublicFooter";
+import PayOnDeliveryModal from "./PayOnDeliveryModal";
+import CashChangeSummary from "@/components/orders/CashChangeSummary";
 import CardapioStoreHeader from "./CardapioStoreHeader";
 import MyOrdersPanel from "./MyOrdersPanel";
 
@@ -84,6 +87,8 @@ type OrderResult = {
   delivery_type: "pickup" | "delivery";
   status: OrderStatus;
   pix_copy_paste: string | null;
+  cash_tender_amount?: number | null;
+  change_amount?: number | null;
 };
 
 function fmt(value: number) {
@@ -164,6 +169,7 @@ export default function CardapioClient({
   } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [showPayOnDeliveryModal, setShowPayOnDeliveryModal] = useState(false);
 
   const CUSTOMER_KEY = `zapcomanda_customer_${establishment.id}`;
   const CUSTOMER_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -385,7 +391,7 @@ export default function CardapioClient({
     closeModal();
   }
 
-  async function handleSubmit() {
+  function handleSubmit() {
     if (!checkout.name.trim() || !checkout.phone.trim()) {
       setOrderError("Preencha seu nome e WhatsApp.");
       return;
@@ -395,35 +401,51 @@ export default function CardapioClient({
       return;
     }
 
+    if (isPayOnDelivery(checkout.paymentMethod)) {
+      setShowPayOnDeliveryModal(true);
+      return;
+    }
+
+    submitOrder();
+  }
+
+  async function submitOrder(cashTenderAmount?: number) {
     setProcessing(true);
     setOrderError(null);
 
     try {
+      const body: Record<string, unknown> = {
+        establishment_id: establishment.id,
+        customer_name: checkout.name.trim(),
+        customer_phone: checkout.phone.replace(/\D/g, ""),
+        delivery_type: checkout.deliveryType,
+        address: checkout.address.trim() || undefined,
+        payment_method: checkout.paymentMethod,
+        coupon_code: appliedCoupon?.code || undefined,
+        items: cart.map((c) => ({
+          menu_item_id: c.menuItemId,
+          item_name: c.name,
+          quantity: c.quantity,
+          unit_price: c.unitPrice,
+          notes: c.notes || undefined,
+          addons: c.selectedAddons,
+        })),
+      };
+
+      if (checkout.paymentMethod === "cash" && cashTenderAmount != null) {
+        body.cash_tender_amount = cashTenderAmount;
+      }
+
       const res = await fetch("/api/cardapio/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          establishment_id: establishment.id,
-          customer_name: checkout.name.trim(),
-          customer_phone: checkout.phone.replace(/\D/g, ""),
-          delivery_type: checkout.deliveryType,
-          address: checkout.address.trim() || undefined,
-          payment_method: checkout.paymentMethod,
-          coupon_code: appliedCoupon?.code || undefined,
-          items: cart.map((c) => ({
-            menu_item_id: c.menuItemId,
-            item_name: c.name,
-            quantity: c.quantity,
-            unit_price: c.unitPrice,
-            notes: c.notes || undefined,
-            addons: c.selectedAddons,
-          })),
-        }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erro ao enviar pedido");
 
+      setShowPayOnDeliveryModal(false);
       setOrderResult(data);
       setLiveStatus(data.status);
       setScreen("confirmed");
@@ -785,7 +807,6 @@ export default function CardapioClient({
         </div>
       )}
 
-      {/* My Orders overlay */}
       {showMyOrders && (
         <div className="fixed inset-0 z-50 flex flex-col bg-white">
           <MyOrdersPanel
@@ -797,6 +818,16 @@ export default function CardapioClient({
           />
         </div>
       )}
+
+      <PayOnDeliveryModal
+        open={showPayOnDeliveryModal}
+        paymentMethod={checkout.paymentMethod}
+        total={total}
+        brand={brand}
+        processing={processing}
+        onClose={() => setShowPayOnDeliveryModal(false)}
+        onConfirm={(cashTenderAmount) => submitOrder(cashTenderAmount)}
+      />
 
       {/* Cart / Checkout / Confirmation overlay */}
       {screen !== "menu" && (
@@ -1278,6 +1309,15 @@ export default function CardapioClient({
                       </button>
                     </div>
                   )}
+
+                  {orderResult.payment_method === "cash" &&
+                    orderResult.cash_tender_amount != null && (
+                      <CashChangeSummary
+                        total={orderResult.total}
+                        cashTenderAmount={orderResult.cash_tender_amount}
+                        changeAmount={orderResult.change_amount ?? 0}
+                      />
+                    )}
 
                   {/* Order summary */}
                   <div className="space-y-1 rounded-2xl border border-gray-100 bg-white p-4">

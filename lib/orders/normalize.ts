@@ -21,6 +21,8 @@ export interface OrderRow {
     addons: Array<{ id: string; name: string; price: number }>;
   }>;
   notes?: string | null;
+  cash_tender_amount: number | null;
+  change_amount: number | null;
 }
 
 function unwrapRelation<T>(value: T | T[] | null | undefined): T | null {
@@ -54,5 +56,8 @@ export function normalizeOrderRow(raw: Record<string, unknown>): OrderRow {
       addons: Array.isArray(item.addons) ? item.addons : [],
     })),
     notes: (raw.notes as string | null) ?? null,
+    cash_tender_amount:
+      raw.cash_tender_amount != null ? Number(raw.cash_tender_amount) : null,
+    change_amount: raw.change_amount != null ? Number(raw.change_amount) : null,
   };
 }

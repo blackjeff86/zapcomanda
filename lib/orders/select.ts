@@ -26,4 +26,4 @@ export function buildOrderStatusUpdate(
 }
 
 export const ORDER_LIST_SELECT =
-  "id, status, total_amount, delivery_fee, created_at, notes, payment_method, payment_collected, delivered_at, delivery_token, delivery_photo_url, delivery_confirmed_by, customers(phone, name), order_items(item_name, quantity, subtotal, notes, addons)";
+  "id, status, total_amount, delivery_fee, created_at, notes, payment_method, payment_collected, delivered_at, delivery_token, delivery_photo_url, delivery_confirmed_by, cash_tender_amount, change_amount, customers(phone, name), order_items(item_name, quantity, subtotal, notes, addons)";

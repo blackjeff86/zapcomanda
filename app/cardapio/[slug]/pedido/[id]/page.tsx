@@ -26,7 +26,7 @@ export default async function OrderTrackingPage({ params }: Props) {
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, status, total_amount, delivery_fee, payment_method, created_at, order_items(item_name, quantity, unit_price, notes, addons)"
+      "id, status, total_amount, delivery_fee, payment_method, cash_tender_amount, change_amount, created_at, order_items(item_name, quantity, unit_price, notes, addons)"
     )
     .eq("id", id)
     .eq("establishment_id", establishment.id)

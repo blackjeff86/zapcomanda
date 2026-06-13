@@ -6,6 +6,7 @@ import {
   normalizeCouponCode,
 } from "@/lib/coupons/apply";
 import { generateDirectPixBrCode } from "@/lib/payments/pix-br-code";
+import { calculateChangeAmount } from "@/lib/payments/cash-change";
 import type { DiscountCoupon, PixKeyType } from "@/types/database";
 
 const orderSchema = z.object({
@@ -33,6 +34,7 @@ const orderSchema = z.object({
     )
     .min(1, "Adicione ao menos um item"),
   coupon_code: z.string().optional(),
+  cash_tender_amount: z.number().min(0).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -116,6 +118,27 @@ export async function POST(request: NextRequest) {
 
     const total = Math.max(0, subtotal + deliveryFee - discountAmount);
 
+    let cashTenderAmount: number | null = null;
+    let changeAmount: number | null = null;
+
+    if (payment_method === "cash") {
+      const tender = parsed.data.cash_tender_amount;
+      if (tender == null || tender <= 0) {
+        return NextResponse.json(
+          { error: "Informe o valor em dinheiro para o pagamento" },
+          { status: 400 }
+        );
+      }
+      if (tender < total) {
+        return NextResponse.json(
+          { error: "O valor em dinheiro precisa cobrir o total do pedido" },
+          { status: 400 }
+        );
+      }
+      cashTenderAmount = tender;
+      changeAmount = calculateChangeAmount(tender, total);
+    }
+
     const { data: customer, error: customerError } = await admin
       .schema("zapcomanda")
       .from("customers")
@@ -140,6 +163,8 @@ export async function POST(request: NextRequest) {
         delivery_fee: deliveryFee,
         coupon_id: couponId,
         discount_amount: discountAmount,
+        cash_tender_amount: cashTenderAmount,
+        change_amount: changeAmount,
       })
       .select("id, created_at")
       .single();
@@ -208,6 +233,8 @@ export async function POST(request: NextRequest) {
         delivery_type: parsed.data.delivery_type,
         status: initialStatus,
         pix_copy_paste: pixCopyPaste,
+        cash_tender_amount: cashTenderAmount,
+        change_amount: changeAmount,
       },
       { status: 201 }
     );

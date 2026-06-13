@@ -153,6 +153,8 @@ export interface Order {
   delivery_token: string | null;
   delivery_photo_url: string | null;
   delivery_confirmed_by: string | null;
+  cash_tender_amount: number | null;
+  change_amount: number | null;
   created_at: string;
   updated_at: string;
 }
