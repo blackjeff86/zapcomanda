@@ -20,15 +20,15 @@ const features = [
   {
     title: "Cardápio do dia",
     description:
-      "Ideal pra quentinha: define o menu da manhã e pronto. Cliente só vê o que tem hoje — sem confusão com prato que acabou.",
-    tag: "Quentinha",
+      "Ideal pra marmita e confeitaria: define o que está pronto hoje e pronto. Cliente só vê o que tem — sem confusão com item que acabou.",
+    tag: "Cardápio do dia",
     pro: true,
   },
   {
     title: "Horário de corte",
     description:
-      "Pedidos aceitos só até o horário que você definir. Depois das 10h30? O bot avisa que encerrou e você não precisa recusar um por um.",
-    tag: "Quentinha",
+      "Pedidos aceitos só até o horário que você definir. Depois do corte? O bot avisa que encerrou e você não precisa recusar um por um.",
+    tag: "Operação",
     pro: true,
   },
   {

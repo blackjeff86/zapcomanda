@@ -10,9 +10,9 @@ const faqs = [
       "Não. Ele manda mensagem no WhatsApp, escolhe o pedido e paga o Pix. Simples assim — igual já faz hoje, só que organizado.",
   },
   {
-    question: "Funciona pra quentinha com cardápio que muda todo dia?",
+    question: "Funciona pra marmita ou doces com cardápio que muda todo dia?",
     answer:
-      "Sim! No plano Pro você define o cardápio do dia toda manhã e pode configurar horário de corte pra parar de aceitar pedidos automaticamente.",
+      "Sim! No plano Pro você marca o que está disponível hoje (marmitas, bolos, etc.) e pode configurar horário de corte para parar pedidos automaticamente.",
   },
   {
     question: "Quanto tempo leva pra configurar?",

@@ -12,7 +12,7 @@ export default function Footer() {
           <Logo size={34} />
 
           <p className="text-sm text-gray-500">
-            Pedidos automáticos via WhatsApp para lanchonetes e quentinhas.
+            Pedidos automáticos via WhatsApp para lanchonetes, marmitas, doces e sanduíches.
           </p>
 
           <div className="flex gap-6 text-sm text-gray-500">

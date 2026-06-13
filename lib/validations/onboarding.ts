@@ -22,7 +22,7 @@ export const onboardingSchema = z.object({
     .string()
     .min(10, "Número de WhatsApp inválido")
     .regex(/^\+?[\d\s()-]+$/, "Formato de número inválido"),
-  category: z.enum(["lanchonete", "quentinha"]),
+  category: z.enum(["lanchonete", "quentinha", "doces"]),
   primary_color: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, "Cor inválida (use formato #RRGGBB)"),

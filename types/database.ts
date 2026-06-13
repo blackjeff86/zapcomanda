@@ -1,4 +1,4 @@
-export type EstablishmentCategory = "lanchonete" | "quentinha";
+export type EstablishmentCategory = "lanchonete" | "quentinha" | "doces";
 export type PlanType = "basic" | "pro";
 export type OrderStatus =
   | "awaiting_payment"
@@ -8,6 +8,8 @@ export type OrderStatus =
   | "delivered"
   | "cancelled";
 export type PaymentStatus = "pending" | "confirmed" | "expired" | "refunded";
+
+export type CouponDiscountType = "fixed" | "percent";
 
 export type PaymentMethod =
   | "pix"
@@ -119,6 +121,18 @@ export interface Customer {
   updated_at: string;
 }
 
+export interface DiscountCoupon {
+  id: string;
+  establishment_id: string;
+  code: string;
+  discount_type: CouponDiscountType;
+  discount_value: number;
+  expires_at: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Order {
   id: string;
   establishment_id: string;
@@ -129,6 +143,8 @@ export interface Order {
   payment_method: PaymentMethod | null;
   payment_collected: boolean;
   delivery_fee: number;
+  coupon_id: string | null;
+  discount_amount: number;
   delivered_at: string | null;
   delivery_token: string | null;
   delivery_photo_url: string | null;

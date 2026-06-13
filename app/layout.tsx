@@ -11,7 +11,7 @@ const geistSans = localFont({
 export const metadata: Metadata = {
   title: "ZapComanda — Pare de perder pedido no WhatsApp",
   description:
-    "Automatize cardápio, Pix e gestão de pedidos para sua lanchonete ou quentinha. Bot no WhatsApp, painel em tempo real. A partir de R$ 49/mês.",
+    "Automatize cardápio, Pix e pedidos para lanchonete, marmita, doces e sanduíches. Bot no WhatsApp, painel em tempo real. A partir de R$ 49/mês.",
   icons: {
     icon: "/logo.svg",
     apple: "/logo.svg",
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "ZapComanda — Pedidos automáticos via WhatsApp",
     description:
-      "Cardápio interativo, Pix na hora e painel de pedidos. Feito para lanchonete de bairro e marmiteira.",
+      "Cardápio interativo, Pix na hora e painel de pedidos. Para quentinha, lanchonete, doceria e confeitaria.",
     locale: "pt_BR",
     type: "website",
     images: ["/logo.svg"],

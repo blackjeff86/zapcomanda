@@ -25,7 +25,7 @@ export const PLANS: Record<PlanType, PlanDefinition> = {
     id: "basic",
     name: "Básico",
     price: PLAN_BASIC_PRICE,
-    description: "Perfeito pra lanchonete que quer organizar o WhatsApp sem complicação.",
+    description: "Perfeito pra lanchonete e sanduíches — organize o WhatsApp sem complicação.",
     features: [
       "Cardápio ilimitado",
       "1 número de WhatsApp",
@@ -39,7 +39,7 @@ export const PLANS: Record<PlanType, PlanDefinition> = {
     id: "pro",
     name: "Pro",
     price: PLAN_PRO_PRICE,
-    description: "Pra quentinha e marmiteira que precisa de cardápio do dia e mais controle.",
+    description: "Pra marmita, quentinha ou doces com cardápio do dia e mais controle.",
     highlighted: true,
     badge: "Mais popular",
     features: [

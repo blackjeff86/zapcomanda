@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { onboardingSchema } from "@/lib/validations/onboarding";
+import { supportsDailyMenuCategory } from "@/lib/establishment/categories";
 import { resolveMenuItemIsDaily } from "@/lib/plans/features";
 import { generateSlug } from "@/lib/utils/slug";
 
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
       is_daily: resolveMenuItemIsDaily(
         "basic",
         establishmentData.category,
-        establishmentData.category === "quentinha" && selectedPlan === "pro"
+        supportsDailyMenuCategory(establishmentData.category) && selectedPlan === "pro"
       ),
       sort_order: index,
     }));

@@ -2,6 +2,10 @@
 
 import { useState, useMemo, useEffect } from "react";
 import type { PaymentMethod } from "@/types/database";
+import {
+  categoryAnchorId,
+  groupMenuItemsByCategory,
+} from "@/lib/menu/group-by-category";
 import MyOrdersPanel from "./MyOrdersPanel";
 
 type Addon = { id: string; name: string; price: number; is_active: boolean };
@@ -66,6 +70,7 @@ type OrderResult = {
   order_ref: string;
   total: number;
   delivery_fee: number;
+  discount_amount?: number;
   payment_method: PaymentMethod;
   delivery_type: "pickup" | "delivery";
   status: OrderStatus;
@@ -93,12 +98,17 @@ export default function CardapioClient({
 }) {
   const brand = establishment.primary_color;
 
-  const categories = useMemo(
-    () => Array.from(new Set(menuItems.map((i) => i.category))),
+  const groupedMenu = useMemo(
+    () => groupMenuItemsByCategory(menuItems),
     [menuItems]
   );
 
-  const [activeCategory, setActiveCategory] = useState(categories[0] ?? "");
+  const categories = useMemo(
+    () => groupedMenu.map((g) => g.category),
+    [groupedMenu]
+  );
+
+  const [activeCategory, setActiveCategory] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [screen, setScreen] = useState<Screen>("menu");
   const [logoError, setLogoError] = useState(false);
@@ -124,9 +134,31 @@ export default function CardapioClient({
   const [orderError, setOrderError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showMyOrders, setShowMyOrders] = useState(false);
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discount_amount: number;
+  } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   const CUSTOMER_KEY = `zapcomanda_customer_${establishment.id}`;
   const CUSTOMER_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategory) {
+      setActiveCategory(categories[0]);
+    }
+  }, [categories, activeCategory]);
+
+  function scrollToCategory(category: string) {
+    setActiveCategory(category);
+    const el = document.getElementById(categoryAnchorId(category));
+    if (el) {
+      const top = el.getBoundingClientRect().top + window.scrollY - 120;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
+  }
 
   function openMyOrders() {
     setShowMyOrders(true);
@@ -197,13 +229,61 @@ export default function CardapioClient({
   }, [orderResult]);
 
   // Derived cart values
-  const cartTotal = cart.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+  const cartTotal = cart.reduce(
+    (s, i) =>
+      s +
+      i.unitPrice * i.quantity +
+      i.selectedAddons.reduce((a, addon) => a + addon.price * i.quantity, 0),
+    0
+  );
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
   const deliveryFee =
     checkout.deliveryType === "delivery" && establishment.delivery_fee_enabled
       ? Number(establishment.delivery_fee_amount)
       : 0;
-  const total = cartTotal + deliveryFee;
+  const discountAmount = appliedCoupon?.discount_amount ?? 0;
+  const total = Math.max(0, cartTotal + deliveryFee - discountAmount);
+
+  async function applyCoupon() {
+    const code = couponInput.trim();
+    if (!code) return;
+
+    setCouponLoading(true);
+    setCouponError(null);
+
+    try {
+      const res = await fetch("/api/cardapio/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          establishment_id: establishment.id,
+          code,
+          subtotal: cartTotal,
+          delivery_fee: deliveryFee,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Cupom inválido");
+
+      setAppliedCoupon({
+        code: data.code,
+        discount_amount: data.discount_amount,
+      });
+      setCouponInput(data.code);
+    } catch (err) {
+      setAppliedCoupon(null);
+      setCouponError(err instanceof Error ? err.message : "Cupom inválido");
+    } finally {
+      setCouponLoading(false);
+    }
+  }
+
+  function clearCoupon() {
+    setAppliedCoupon(null);
+    setCouponInput("");
+    setCouponError(null);
+  }
 
   const itemQtyInCart = (menuItemId: string) =>
     cart
@@ -306,6 +386,7 @@ export default function CardapioClient({
           delivery_type: checkout.deliveryType,
           address: checkout.address.trim() || undefined,
           payment_method: checkout.paymentMethod,
+          coupon_code: appliedCoupon?.code || undefined,
           items: cart.map((c) => ({
             menu_item_id: c.menuItemId,
             item_name: c.name,
@@ -351,10 +432,7 @@ export default function CardapioClient({
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const visibleItems = useMemo(
-    () => menuItems.filter((i) => i.category === activeCategory),
-    [menuItems, activeCategory]
-  );
+  const visibleGroups = groupedMenu;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
@@ -392,7 +470,7 @@ export default function CardapioClient({
           <button
             key={cat}
             type="button"
-            onClick={() => setActiveCategory(cat)}
+            onClick={() => scrollToCategory(cat)}
             className="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition"
             style={
               activeCategory === cat
@@ -405,60 +483,82 @@ export default function CardapioClient({
         ))}
       </div>
 
-      {/* Items */}
-      <div className="px-4 pt-4 space-y-3">
-        {visibleItems.map((item) => {
-          const qty = itemQtyInCart(item.id);
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => openModal(item)}
-              className="flex w-full gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm text-left"
-            >
-              {item.photo_url && (
-                <img
-                  src={item.photo_url}
-                  alt={item.name}
-                  className="h-20 w-20 shrink-0 rounded-xl object-cover"
-                />
-              )}
-              <div className="flex min-w-0 flex-1 flex-col justify-between">
-                <div>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <p className="font-semibold text-gray-900 leading-tight">{item.name}</p>
-                    {item.combo_partner_id && (
-                      <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
-                        Combo
-                      </span>
-                    )}
-                  </div>
-                  {item.description && (
-                    <p className="mt-0.5 text-xs text-gray-500 line-clamp-2">
-                      {item.description}
-                    </p>
-                  )}
-                </div>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-sm font-bold text-gray-900">
-                    {fmt(Number(item.price))}
-                  </span>
-                  <div
-                    className="flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold text-white"
-                    style={{ backgroundColor: brand }}
+      {/* Items grouped by category */}
+      <div className="px-4 pt-4 space-y-6">
+        {visibleGroups.map(({ category, items: categoryItems }) => (
+          <section
+            key={category}
+            id={categoryAnchorId(category)}
+            className="scroll-mt-28"
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <span className="text-brand" style={{ color: brand }}>›</span>
+              <h2 className="text-sm font-bold uppercase tracking-wide text-gray-800">
+                {category}
+              </h2>
+              <span className="text-xs text-gray-400">({categoryItems.length})</span>
+            </div>
+            <div className="space-y-3">
+              {categoryItems.map((item) => {
+                const qty = itemQtyInCart(item.id);
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => openModal(item)}
+                    className="flex w-full gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm text-left"
                   >
-                    {qty > 0 && (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/25 text-xs font-bold">
-                        {qty}
-                      </span>
+                    {item.photo_url && (
+                      <img
+                        src={item.photo_url}
+                        alt={item.name}
+                        className="h-20 w-20 shrink-0 rounded-xl object-cover"
+                      />
                     )}
-                    <span>{qty > 0 ? "Adicionar mais" : "+ Adicionar"}</span>
-                  </div>
-                </div>
-              </div>
-            </button>
-          );
-        })}
+                    <div className="flex min-w-0 flex-1 flex-col justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <p className="font-semibold text-gray-900 leading-tight">
+                            {item.name}
+                          </p>
+                          {item.combo_partner_id && (
+                            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
+                              Combo
+                            </span>
+                          )}
+                        </div>
+                        {item.description && (
+                          <p className="mt-0.5 text-xs text-gray-500 line-clamp-2">
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span
+                          className="text-sm font-bold"
+                          style={{ color: brand }}
+                        >
+                          {fmt(Number(item.price))}
+                        </span>
+                        <div
+                          className="flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold text-white"
+                          style={{ backgroundColor: brand }}
+                        >
+                          {qty > 0 && (
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/25 text-xs font-bold">
+                              {qty}
+                            </span>
+                          )}
+                          <span>{qty > 0 ? "Adicionar mais" : "+ Adicionar"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ))}
       </div>
 
       {/* Cart bar */}
@@ -835,9 +935,10 @@ export default function CardapioClient({
                         type="radio"
                         name="deliveryType"
                         checked={checkout.deliveryType === type}
-                        onChange={() =>
-                          setCheckout((p) => ({ ...p, deliveryType: type }))
-                        }
+                        onChange={() => {
+                          clearCoupon();
+                          setCheckout((p) => ({ ...p, deliveryType: type }));
+                        }}
                       />
                       <span className="text-sm font-medium text-gray-900">
                         {type === "delivery"
@@ -895,6 +996,50 @@ export default function CardapioClient({
                   ))}
                 </div>
 
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-700">Cupom de desconto</h3>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponInput}
+                      onChange={(e) => {
+                        setCouponInput(e.target.value.toUpperCase().replace(/\s/g, ""));
+                        if (appliedCoupon) setAppliedCoupon(null);
+                        setCouponError(null);
+                      }}
+                      placeholder="Código do cupom"
+                      className="min-w-0 flex-1 rounded-xl border border-gray-300 px-4 py-3 text-sm uppercase focus:outline-none focus:ring-1 focus:ring-gray-400"
+                    />
+                    {appliedCoupon ? (
+                      <button
+                        type="button"
+                        onClick={clearCoupon}
+                        className="shrink-0 rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700"
+                      >
+                        Remover
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={couponLoading || !couponInput.trim()}
+                        onClick={applyCoupon}
+                        className="shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                        style={{ backgroundColor: brand }}
+                      >
+                        {couponLoading ? "..." : "Aplicar"}
+                      </button>
+                    )}
+                  </div>
+                  {couponError && (
+                    <p className="text-xs text-red-600">{couponError}</p>
+                  )}
+                  {appliedCoupon && (
+                    <p className="text-xs font-medium text-green-700">
+                      Cupom {appliedCoupon.code} aplicado (−{fmt(appliedCoupon.discount_amount)})
+                    </p>
+                  )}
+                </div>
+
                 <div className="space-y-1 rounded-xl bg-gray-50 p-4">
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Subtotal</span>
@@ -904,6 +1049,12 @@ export default function CardapioClient({
                     <div className="flex justify-between text-sm text-gray-600">
                       <span>Taxa de entrega</span>
                       <span>{fmt(deliveryFee)}</span>
+                    </div>
+                  )}
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-green-700">
+                      <span>Desconto ({appliedCoupon?.code})</span>
+                      <span>−{fmt(discountAmount)}</span>
                     </div>
                   )}
                   <div className="mt-1 flex justify-between border-t border-gray-200 pt-2 text-base font-bold text-gray-900">

@@ -16,7 +16,7 @@ export default function Hero() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-brand" />
             </span>
-            Feito para lanchonete de bairro e quentinha
+            Feito para lanchonete, marmita, doces e sanduíches
           </div>
 
           <h1 className="text-balance text-4xl font-extrabold leading-[1.1] tracking-tight text-gray-900 sm:text-5xl lg:text-[3.4rem]">

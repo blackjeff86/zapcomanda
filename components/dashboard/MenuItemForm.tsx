@@ -160,7 +160,7 @@ export default function MenuItemForm({
                   Incluir no cardápio do dia
                 </span>
                 <span className="mt-0.5 block text-xs text-gray-500">
-                  Item aparece nas opções de quentinha/marmita do dia no WhatsApp.
+                  Item aparece no cardápio do dia no WhatsApp e no cardápio web (o que está disponível hoje).
                 </span>
               </span>
             </label>

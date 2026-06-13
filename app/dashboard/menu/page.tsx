@@ -19,7 +19,7 @@ export default async function MenuPage() {
     <>
       <DashboardPageHeader
         title="Cardápio"
-        description="Itens que o cliente vê e escolhe no WhatsApp."
+        description="Organize por categoria. Use os filtros para ver só uma seção ou todos os produtos."
       />
 
       <MenuManager

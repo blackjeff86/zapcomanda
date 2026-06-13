@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  applyCouponToOrder,
+  normalizeCouponCode,
+} from "@/lib/coupons/apply";
 import { generateDirectPixBrCode } from "@/lib/payments/pix-br-code";
-import type { PixKeyType } from "@/lib/payments/pix-key";
+import type { DiscountCoupon, PixKeyType } from "@/types/database";
 
 const orderSchema = z.object({
   establishment_id: z.string().uuid(),
@@ -28,6 +32,7 @@ const orderSchema = z.object({
       })
     )
     .min(1, "Adicione ao menos um item"),
+  coupon_code: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -77,7 +82,39 @@ export async function POST(request: NextRequest) {
         ? Number(establishment.delivery_fee_amount)
         : 0;
 
-    const total = subtotal + deliveryFee;
+    let discountAmount = 0;
+    let couponId: string | null = null;
+
+    if (parsed.data.coupon_code?.trim()) {
+      const code = normalizeCouponCode(parsed.data.coupon_code);
+      const { data: coupon, error: couponError } = await admin
+        .from("discount_coupons")
+        .select("*")
+        .eq("establishment_id", establishment_id)
+        .eq("code", code)
+        .maybeSingle();
+
+      if (couponError) throw couponError;
+      if (!coupon) {
+        return NextResponse.json({ error: "Cupom não encontrado" }, { status: 400 });
+      }
+
+      try {
+        const applied = applyCouponToOrder(
+          subtotal,
+          deliveryFee,
+          coupon as DiscountCoupon
+        );
+        discountAmount = applied.discountAmount;
+        couponId = applied.coupon.id;
+      } catch (couponErr) {
+        const message =
+          couponErr instanceof Error ? couponErr.message : "Cupom inválido";
+        return NextResponse.json({ error: message }, { status: 400 });
+      }
+    }
+
+    const total = Math.max(0, subtotal + deliveryFee - discountAmount);
 
     const { data: customer, error: customerError } = await admin
       .schema("zapcomanda")
@@ -101,6 +138,8 @@ export async function POST(request: NextRequest) {
         total_amount: total,
         payment_method,
         delivery_fee: deliveryFee,
+        coupon_id: couponId,
+        discount_amount: discountAmount,
       })
       .select("id, created_at")
       .single();
@@ -163,6 +202,8 @@ export async function POST(request: NextRequest) {
         order_ref: order.id.slice(0, 8).toUpperCase(),
         total,
         delivery_fee: deliveryFee,
+        discount_amount: discountAmount,
+        coupon_code: couponId ? parsed.data.coupon_code : null,
         payment_method,
         delivery_type: parsed.data.delivery_type,
         status: initialStatus,

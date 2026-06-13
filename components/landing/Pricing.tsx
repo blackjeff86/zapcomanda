@@ -4,7 +4,7 @@ const plans = [
   {
     name: "Básico",
     price: "49",
-    description: "Perfeito pra lanchonete que quer organizar o WhatsApp sem complicação.",
+    description: "Perfeito pra lanchonete e sanduíches — organize o WhatsApp sem complicação.",
     features: [
       "Cardápio ilimitado",
       "1 número de WhatsApp",
@@ -19,7 +19,7 @@ const plans = [
   {
     name: "Pro",
     price: "79",
-    description: "Pra quentinha e marmiteira que precisa de cardápio do dia e mais controle.",
+    description: "Pra marmita, quentinha ou doces com cardápio do dia e mais controle.",
     features: [
       "Tudo do plano Básico",
       "2 números de WhatsApp",

@@ -1,4 +1,5 @@
-import type { PlanType } from "@/types/database";
+import { supportsDailyMenuCategory } from "@/lib/establishment/categories";
+import type { EstablishmentCategory, PlanType } from "@/types/database";
 
 export function isProPlan(plan: PlanType): boolean {
   return plan === "pro";
@@ -16,10 +17,10 @@ export function canUseOrderCutoff(plan: PlanType): boolean {
 
 export function resolveMenuItemIsDaily(
   plan: PlanType,
-  category: string,
+  establishmentCategory: EstablishmentCategory,
   requested?: boolean
 ): boolean {
-  if (category !== "quentinha") return false;
+  if (!supportsDailyMenuCategory(establishmentCategory)) return false;
   if (!canUseDailyMenu(plan)) return false;
   return requested ?? true;
 }

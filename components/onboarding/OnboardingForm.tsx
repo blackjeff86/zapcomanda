@@ -3,6 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PLANS } from "@/lib/plans/config";
+import {
+  ESTABLISHMENT_CATEGORIES,
+  ESTABLISHMENT_CATEGORY_HINTS,
+  ESTABLISHMENT_CATEGORY_LABELS,
+  SUGGESTED_MENU_CATEGORIES,
+  supportsDailyMenuCategory,
+} from "@/lib/establishment/categories";
 import type { OnboardingFormData } from "@/lib/validations/onboarding";
 import type { PlanType } from "@/types/database";
 
@@ -279,8 +286,8 @@ export default function OnboardingForm() {
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Categoria
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              {(["lanchonete", "quentinha"] as const).map((cat) => (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {ESTABLISHMENT_CATEGORIES.map((cat) => (
                 <button
                   key={cat}
                   type="button"
@@ -291,11 +298,11 @@ export default function OnboardingForm() {
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  <span className="font-medium capitalize">{cat}</span>
+                  <span className="font-medium text-gray-900">
+                    {ESTABLISHMENT_CATEGORY_LABELS[cat]}
+                  </span>
                   <p className="mt-1 text-xs text-gray-500">
-                    {cat === "lanchonete"
-                      ? "Cardápio fixo com categorias"
-                      : "Ideal com plano Pro (cardápio do dia + corte)"}
+                    {ESTABLISHMENT_CATEGORY_HINTS[cat]}
                   </p>
                 </button>
               ))}
@@ -311,10 +318,10 @@ export default function OnboardingForm() {
             Sem fidelidade. Você pode mudar depois no painel.
           </p>
 
-          {form.category === "quentinha" && form.plan === "basic" && (
+          {supportsDailyMenuCategory(form.category) && form.plan === "basic" && (
             <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              Para quentinha/marmita, o plano <strong>Pro</strong> libera cardápio do dia e horário
-              de corte no WhatsApp.
+              Para marmita ou produção do dia, o plano <strong>Pro</strong> libera cardápio do dia
+              e horário de corte no WhatsApp.
             </p>
           )}
 
@@ -426,7 +433,12 @@ export default function OnboardingForm() {
       {step === 3 && (
         <div className="space-y-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Cardápio</h2>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Cardápio</h2>
+              <p className="mt-1 text-xs text-gray-500">
+                Sugestões de categoria: {SUGGESTED_MENU_CATEGORIES[form.category].join(", ")}
+              </p>
+            </div>
             <button
               type="button"
               onClick={addMenuItem}

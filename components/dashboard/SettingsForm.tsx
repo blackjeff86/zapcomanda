@@ -16,13 +16,14 @@ import {
   type PixKeyType,
 } from "@/lib/payments/pix-key";
 import { canUseOrderCutoff, isProPlan } from "@/lib/plans/features";
-import type { Establishment } from "@/types/database";
+import {
+  formatEstablishmentCategory,
+  supportsDailyMenuCategory,
+} from "@/lib/establishment/categories";
+import CouponManager from "@/components/dashboard/CouponManager";
 import WhatsAppInstancesManager from "@/components/dashboard/WhatsAppInstancesManager";
 import ImageUpload from "@/components/ui/ImageUpload";
-
-function formatCategory(category: string) {
-  return category === "quentinha" ? "Quentinha / Marmita" : "Lanchonete";
-}
+import type { Establishment } from "@/types/database";
 
 export default function SettingsForm({
   establishment,
@@ -113,7 +114,7 @@ export default function SettingsForm({
         <div className="rounded-2xl border border-gray-200 bg-white p-5">
           <p className="text-sm text-gray-500">Tipo de negócio</p>
           <p className="mt-1 text-lg font-semibold text-gray-900">
-            {formatCategory(establishment.category)}
+            {formatEstablishmentCategory(establishment.category)}
           </p>
         </div>
       </div>
@@ -176,7 +177,7 @@ export default function SettingsForm({
             </div>
           </div>
 
-          {establishment.category === "quentinha" && hasOrderCutoff && (
+          {supportsDailyMenuCategory(establishment.category) && hasOrderCutoff && (
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Horário de corte de pedidos
@@ -195,11 +196,11 @@ export default function SettingsForm({
             </div>
           )}
 
-          {establishment.category === "quentinha" && !hasOrderCutoff && (
+          {supportsDailyMenuCategory(establishment.category) && !hasOrderCutoff && (
             <div className="sm:col-span-2">
               <ProFeatureUpsell
                 title="Horário de corte — plano Pro"
-                description="Defina um horário para o bot parar de aceitar pedidos automaticamente (ex.: 11:00 para quentinhas)."
+                description="Defina um horário para o bot parar de aceitar pedidos (ex.: 11:00 para marmitas ou 18:00 para bolos do dia)."
               />
             </div>
           )}
@@ -316,6 +317,8 @@ export default function SettingsForm({
             foto. O cliente também recebe mensagem automática no WhatsApp.
           </p>
         </div>
+
+        <CouponManager devMock={devMock} />
 
         <div className="mt-6 border-t border-gray-100 pt-6">
           <h4 className="font-semibold text-gray-900">Formas de pagamento aceitas</h4>

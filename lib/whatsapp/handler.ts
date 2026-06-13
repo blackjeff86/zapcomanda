@@ -1,4 +1,5 @@
 import { canUseDailyMenu, canUseOrderCutoff } from "@/lib/plans/features";
+import { supportsDailyMenuCategory } from "@/lib/establishment/categories";
 import { formatCartLine, formatOrderTotalLines, lineSubtotal, orderTotal } from "@/lib/orders/cart";
 import { getEstablishmentDeliveryFee } from "@/lib/establishment/delivery-fee";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -136,7 +137,7 @@ async function getActiveMenu(establishment: Establishment): Promise<MenuItem[]> 
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
 
-  if (establishment.category === "quentinha" && canUseDailyMenu(establishment.plan)) {
+  if (supportsDailyMenuCategory(establishment.category) && canUseDailyMenu(establishment.plan)) {
     query = query.eq("is_daily", true);
   }
 
