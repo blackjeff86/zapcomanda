@@ -125,6 +125,30 @@ export default function CardapioClient({
   const [copied, setCopied] = useState(false);
   const [showMyOrders, setShowMyOrders] = useState(false);
 
+  const CUSTOMER_KEY = `zapcomanda_customer_${establishment.id}`;
+  const CUSTOMER_TTL = 7_200_000; // 2 hours
+
+  // Restore saved customer data on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CUSTOMER_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { name: string; phone: string; savedAt: number };
+      if (Date.now() - saved.savedAt > CUSTOMER_TTL) {
+        localStorage.removeItem(CUSTOMER_KEY);
+        return;
+      }
+      setCheckout((prev) => ({
+        ...prev,
+        name: saved.name || prev.name,
+        phone: saved.phone || prev.phone,
+      }));
+    } catch {
+      // private browsing or quota exceeded — ignore
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Poll order status every 10 seconds after order is placed
   useEffect(() => {
     if (!orderResult) return;
@@ -275,6 +299,20 @@ export default function CardapioClient({
       setOrderResult(data);
       setLiveStatus(data.status);
       setScreen("confirmed");
+
+      // Persist customer data for 2h so they don't need to retype
+      try {
+        localStorage.setItem(
+          CUSTOMER_KEY,
+          JSON.stringify({
+            name: checkout.name.trim(),
+            phone: checkout.phone.replace(/\D/g, ""),
+            savedAt: Date.now(),
+          })
+        );
+      } catch {
+        // private browsing or quota exceeded — ignore
+      }
     } catch (err) {
       setOrderError(err instanceof Error ? err.message : "Erro ao enviar pedido");
     } finally {
@@ -1083,6 +1121,15 @@ export default function CardapioClient({
                       {typeof window !== "undefined" ? window.location.origin : ""}/cardapio/{establishment.slug}/pedido/{orderResult.order_id}
                     </a>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowMyOrders(true)}
+                    className="w-full rounded-xl py-3 text-sm font-semibold text-white"
+                    style={{ backgroundColor: brand }}
+                  >
+                    📋 Ver todos os meus pedidos
+                  </button>
 
                   <button
                     type="button"
