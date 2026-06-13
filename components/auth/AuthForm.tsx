@@ -48,7 +48,7 @@ export default function AuthForm({
 
     try {
       if (isSignup) {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -58,16 +58,22 @@ export default function AuthForm({
 
         if (signUpError) throw signUpError;
 
-        const { data: session } = await supabase.auth.getSession();
-        if (session.session) {
+        // Quando confirmação de e-mail está desativada, a sessão já vem no retorno
+        if (signUpData.session) {
           router.push("/onboarding");
           router.refresh();
           return;
         }
 
-        setMessage(
-          "Conta criada! Verifique seu e-mail para confirmar o cadastro."
-        );
+        // Fallback: verificar sessão ativa
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session) {
+          router.push("/onboarding");
+          router.refresh();
+          return;
+        }
+
+        setMessage("Conta criada com sucesso! Faça login para continuar.");
         return;
       }
 
