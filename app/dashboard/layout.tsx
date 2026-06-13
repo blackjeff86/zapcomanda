@@ -18,6 +18,7 @@ export default async function DashboardLayout({
       establishmentName={establishment.name}
       whatsappNumber={establishment.whatsapp_number}
       plan={establishment.plan}
+      isManuallyClose={establishment.is_manually_closed}
       devMode={bypassAuth}
     >
       {children}

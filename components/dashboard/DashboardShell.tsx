@@ -9,6 +9,7 @@ import {
   DashboardSearchBar,
   DashboardSearchProvider,
 } from "@/components/dashboard/DashboardSearch";
+import DashboardQuickActions from "@/components/dashboard/DashboardQuickActions";
 import type { PlanType } from "@/types/database";
 
 export default function DashboardShell({
@@ -16,6 +17,7 @@ export default function DashboardShell({
   establishmentName,
   whatsappNumber,
   plan,
+  isManuallyClose = false,
   devMode = false,
   children,
 }: {
@@ -23,6 +25,7 @@ export default function DashboardShell({
   establishmentName: string;
   whatsappNumber?: string;
   plan: PlanType;
+  isManuallyClose?: boolean;
   devMode?: boolean;
   children: React.ReactNode;
 }) {
@@ -56,14 +59,20 @@ export default function DashboardShell({
 
             <DashboardSidebarNav />
 
-            {devMode && (
-              <div className="border-t border-gray-100 p-4">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                  Modo desenvolvimento
-                </span>
-              </div>
-            )}
+            <div className="mt-auto">
+              {devMode && (
+                <div className="border-t border-gray-100 px-4 pt-3">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                    Modo desenvolvimento
+                  </span>
+                </div>
+              )}
+              <DashboardQuickActions
+                initialIsClosed={isManuallyClose}
+                devMode={devMode}
+              />
+            </div>
           </aside>
 
           <div className="flex-1 min-w-0">
@@ -86,6 +95,10 @@ export default function DashboardShell({
                 <DashboardSearchBar establishmentId={establishmentId} variant="mobile" />
               </div>
               <DashboardMobileNav />
+              <DashboardQuickActions
+                initialIsClosed={isManuallyClose}
+                devMode={devMode}
+              />
             </header>
 
             <main className="px-4 py-6 sm:px-6 lg:px-8">{children}</main>
