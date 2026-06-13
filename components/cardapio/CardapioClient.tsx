@@ -30,10 +30,13 @@ type Establishment = {
 };
 
 type CartItem = {
+  id: string;
   menuItemId: string;
   name: string;
   unitPrice: number;
   quantity: number;
+  notes: string;
+  selectedAddons: Array<{ id: string; name: string; price: number }>;
 };
 
 type Screen = "menu" | "cart" | "checkout" | "confirmed";
@@ -42,6 +45,7 @@ type CheckoutForm = {
   name: string;
   phone: string;
   deliveryType: "pickup" | "delivery";
+  address: string;
   paymentMethod: PaymentMethod;
 };
 
@@ -56,6 +60,14 @@ type OrderResult = {
 function fmt(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
+
+const PAYMENT_LABELS: Record<PaymentMethod, string> = {
+  pix: "Pix",
+  credit_card: "Cartão de crédito",
+  debit_card: "Cartão de débito",
+  cash: "Dinheiro",
+  meal_voucher: "Vale refeição",
+};
 
 export default function CardapioClient({
   establishment,
@@ -74,10 +86,20 @@ export default function CardapioClient({
   const [activeCategory, setActiveCategory] = useState(categories[0] ?? "");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [screen, setScreen] = useState<Screen>("menu");
+  const [logoError, setLogoError] = useState(false);
+
+  // Item detail modal
+  const [modalItem, setModalItem] = useState<MenuItem | null>(null);
+  const [modalQty, setModalQty] = useState(1);
+  const [modalNotes, setModalNotes] = useState("");
+  const [modalAddons, setModalAddons] = useState<Set<string>>(new Set());
+
+  // Checkout
   const [checkout, setCheckout] = useState<CheckoutForm>({
     name: "",
     phone: "",
     deliveryType: establishment.delivery_fee_enabled ? "delivery" : "pickup",
+    address: "",
     paymentMethod: establishment.accepted_payment_methods[0] ?? "cash",
   });
   const [processing, setProcessing] = useState(false);
@@ -85,11 +107,7 @@ export default function CardapioClient({
   const [orderError, setOrderError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const visibleItems = useMemo(
-    () => menuItems.filter((i) => i.category === activeCategory),
-    [menuItems, activeCategory]
-  );
-
+  // Derived cart values
   const cartTotal = cart.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
   const deliveryFee =
@@ -98,31 +116,76 @@ export default function CardapioClient({
       : 0;
   const total = cartTotal + deliveryFee;
 
-  function getQty(id: string) {
-    return cart.find((c) => c.menuItemId === id)?.quantity ?? 0;
+  const itemQtyInCart = (menuItemId: string) =>
+    cart
+      .filter((c) => c.menuItemId === menuItemId)
+      .reduce((s, c) => s + c.quantity, 0);
+
+  // Modal derived values
+  const activeAddons = useMemo(
+    () => modalItem?.menu_item_addons.filter((a) => a.is_active) ?? [],
+    [modalItem]
+  );
+  const modalAddonTotal = useMemo(
+    () =>
+      activeAddons
+        .filter((a) => modalAddons.has(a.id))
+        .reduce((s, a) => s + Number(a.price), 0),
+    [activeAddons, modalAddons]
+  );
+  const modalUnitPrice = modalItem ? Number(modalItem.price) + modalAddonTotal : 0;
+
+  function openModal(item: MenuItem) {
+    setModalItem(item);
+    setModalQty(1);
+    setModalNotes("");
+    setModalAddons(new Set());
   }
 
-  function setQty(item: MenuItem, delta: number) {
-    setCart((prev) => {
-      const existing = prev.find((c) => c.menuItemId === item.id);
-      if (!existing) {
-        if (delta <= 0) return prev;
-        return [
-          ...prev,
-          { menuItemId: item.id, name: item.name, unitPrice: Number(item.price), quantity: delta },
-        ];
-      }
-      const next = existing.quantity + delta;
-      if (next <= 0) return prev.filter((c) => c.menuItemId !== item.id);
-      return prev.map((c) =>
-        c.menuItemId === item.id ? { ...c, quantity: next } : c
-      );
+  function closeModal() {
+    setModalItem(null);
+  }
+
+  function toggleAddon(id: string) {
+    setModalAddons((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
+  }
+
+  function addToCart() {
+    if (!modalItem) return;
+    const selectedAddonItems = activeAddons
+      .filter((a) => modalAddons.has(a.id))
+      .map((a) => ({ id: a.id, name: a.name, price: Number(a.price) }));
+
+    const newItem: CartItem = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      menuItemId: modalItem.id,
+      name: modalItem.name,
+      unitPrice: modalUnitPrice,
+      quantity: modalQty,
+      notes: modalNotes.trim(),
+      selectedAddons: selectedAddonItems,
+    };
+
+    setCart((prev) => [...prev, newItem]);
+    closeModal();
+  }
+
+  function removeCartItem(id: string) {
+    setCart((prev) => prev.filter((c) => c.id !== id));
   }
 
   async function handleSubmit() {
     if (!checkout.name.trim() || !checkout.phone.trim()) {
       setOrderError("Preencha seu nome e WhatsApp.");
+      return;
+    }
+    if (checkout.deliveryType === "delivery" && !checkout.address.trim()) {
+      setOrderError("Informe o endereço de entrega.");
       return;
     }
 
@@ -138,12 +201,15 @@ export default function CardapioClient({
           customer_name: checkout.name.trim(),
           customer_phone: checkout.phone.replace(/\D/g, ""),
           delivery_type: checkout.deliveryType,
+          address: checkout.address.trim() || undefined,
           payment_method: checkout.paymentMethod,
           items: cart.map((c) => ({
             menu_item_id: c.menuItemId,
             item_name: c.name,
             quantity: c.quantity,
             unit_price: c.unitPrice,
+            notes: c.notes || undefined,
+            addons: c.selectedAddons,
           })),
         }),
       });
@@ -167,13 +233,10 @@ export default function CardapioClient({
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const PAYMENT_LABELS: Record<PaymentMethod, string> = {
-    pix: "Pix",
-    credit_card: "Cartão de crédito",
-    debit_card: "Cartão de débito",
-    cash: "Dinheiro",
-    meal_voucher: "Vale refeição",
-  };
+  const visibleItems = useMemo(
+    () => menuItems.filter((i) => i.category === activeCategory),
+    [menuItems, activeCategory]
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
@@ -182,11 +245,12 @@ export default function CardapioClient({
         className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3 shadow-sm"
         style={{ backgroundColor: brand }}
       >
-        {establishment.logo_url ? (
+        {establishment.logo_url && !logoError ? (
           <img
             src={establishment.logo_url}
             alt={establishment.name}
             className="h-9 w-9 rounded-full border-2 border-white/30 object-cover"
+            onError={() => setLogoError(true)}
           />
         ) : (
           <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white/30 bg-white/20 text-sm font-bold text-white">
@@ -197,7 +261,7 @@ export default function CardapioClient({
       </header>
 
       {/* Category tabs */}
-      <div className="sticky top-[57px] z-10 flex gap-2 overflow-x-auto bg-white px-4 py-2.5 shadow-sm scrollbar-hide">
+      <div className="sticky top-[57px] z-10 flex gap-2 overflow-x-auto bg-white px-4 py-2.5 shadow-sm">
         {categories.map((cat) => (
           <button
             key={cat}
@@ -218,11 +282,13 @@ export default function CardapioClient({
       {/* Items */}
       <div className="px-4 pt-4 space-y-3">
         {visibleItems.map((item) => {
-          const qty = getQty(item.id);
+          const qty = itemQtyInCart(item.id);
           return (
-            <div
+            <button
               key={item.id}
-              className="flex gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm"
+              type="button"
+              onClick={() => openModal(item)}
+              className="flex w-full gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm text-left"
             >
               {item.photo_url && (
                 <img
@@ -244,39 +310,20 @@ export default function CardapioClient({
                   <span className="text-sm font-bold text-gray-900">
                     {fmt(Number(item.price))}
                   </span>
-                  {qty === 0 ? (
-                    <button
-                      type="button"
-                      onClick={() => setQty(item, 1)}
-                      className="rounded-full px-3 py-1 text-sm font-semibold text-white"
-                      style={{ backgroundColor: brand }}
-                    >
-                      + Adicionar
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setQty(item, -1)}
-                        className="flex h-7 w-7 items-center justify-center rounded-full border-2 text-lg font-bold leading-none"
-                        style={{ borderColor: brand, color: brand }}
-                      >
-                        −
-                      </button>
-                      <span className="w-4 text-center text-sm font-bold">{qty}</span>
-                      <button
-                        type="button"
-                        onClick={() => setQty(item, 1)}
-                        className="flex h-7 w-7 items-center justify-center rounded-full text-lg font-bold leading-none text-white"
-                        style={{ backgroundColor: brand }}
-                      >
-                        +
-                      </button>
-                    </div>
-                  )}
+                  <div
+                    className="flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold text-white"
+                    style={{ backgroundColor: brand }}
+                  >
+                    {qty > 0 && (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/25 text-xs font-bold">
+                        {qty}
+                      </span>
+                    )}
+                    <span>{qty > 0 ? "Adicionar mais" : "+ Adicionar"}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -299,10 +346,128 @@ export default function CardapioClient({
         </div>
       )}
 
+      {/* Item detail modal (bottom sheet) */}
+      {modalItem && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50"
+          onClick={closeModal}
+        >
+          <div
+            className="flex max-h-[90vh] flex-col overflow-y-auto rounded-t-3xl bg-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drag handle */}
+            <div className="flex justify-center pb-1 pt-3">
+              <div className="h-1 w-10 rounded-full bg-gray-300" />
+            </div>
+
+            {modalItem.photo_url && (
+              <img
+                src={modalItem.photo_url}
+                alt={modalItem.name}
+                className="h-48 w-full object-cover"
+              />
+            )}
+
+            <div className="space-y-4 p-5">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{modalItem.name}</h2>
+                {modalItem.description && (
+                  <p className="mt-1 text-sm text-gray-500">{modalItem.description}</p>
+                )}
+                <p className="mt-2 text-base font-bold" style={{ color: brand }}>
+                  {fmt(Number(modalItem.price))}
+                </p>
+              </div>
+
+              {/* Addons */}
+              {activeAddons.length > 0 && (
+                <div>
+                  <p className="mb-2 text-sm font-semibold text-gray-700">Adicionais</p>
+                  <div className="space-y-2">
+                    {activeAddons.map((addon) => (
+                      <label
+                        key={addon.id}
+                        className="flex cursor-pointer items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="flex h-5 w-5 items-center justify-center rounded border-2 transition"
+                            style={
+                              modalAddons.has(addon.id)
+                                ? { backgroundColor: brand, borderColor: brand }
+                                : { borderColor: "#d1d5db" }
+                            }
+                            onClick={() => toggleAddon(addon.id)}
+                          >
+                            {modalAddons.has(addon.id) && (
+                              <span className="text-xs font-bold text-white">✓</span>
+                            )}
+                          </div>
+                          <span className="text-sm text-gray-900">{addon.name}</span>
+                        </div>
+                        <span className="shrink-0 text-sm font-medium text-gray-600">
+                          + {fmt(Number(addon.price))}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-700">
+                  Observação{" "}
+                  <span className="font-normal text-gray-400">(opcional)</span>
+                </label>
+                <textarea
+                  placeholder="Ex: sem cebola, molho à parte..."
+                  value={modalNotes}
+                  onChange={(e) => setModalNotes(e.target.value)}
+                  rows={2}
+                  className="w-full resize-none rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                />
+              </div>
+
+              {/* Qty + Add button */}
+              <div className="flex items-center gap-3 pb-2">
+                <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2">
+                  <button
+                    type="button"
+                    onClick={() => setModalQty((q) => Math.max(1, q - 1))}
+                    className="text-xl font-bold leading-none"
+                    style={{ color: brand }}
+                  >
+                    −
+                  </button>
+                  <span className="w-5 text-center font-bold">{modalQty}</span>
+                  <button
+                    type="button"
+                    onClick={() => setModalQty((q) => q + 1)}
+                    className="text-xl font-bold leading-none"
+                    style={{ color: brand }}
+                  >
+                    +
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={addToCart}
+                  className="flex-1 rounded-xl py-3 text-sm font-bold text-white"
+                  style={{ backgroundColor: brand }}
+                >
+                  Adicionar · {fmt(modalUnitPrice * modalQty)}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Cart / Checkout / Confirmation overlay */}
       {screen !== "menu" && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-white">
-          {/* Overlay header */}
+        <div className="fixed inset-0 z-40 flex flex-col bg-white">
           <div
             className="flex items-center gap-3 px-4 py-3 text-white"
             style={{ backgroundColor: brand }}
@@ -330,46 +495,54 @@ export default function CardapioClient({
           <div className="flex-1 overflow-y-auto">
             {/* Cart screen */}
             {screen === "cart" && (
-              <div className="p-4 space-y-4">
+              <div className="space-y-4 p-4">
                 {cart.map((item) => (
-                  <div key={item.menuItemId} className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const mi = menuItems.find((m) => m.id === item.menuItemId);
-                            if (mi) setQty(mi, -1);
-                          }}
-                          className="flex h-7 w-7 items-center justify-center rounded-full border-2 text-base font-bold"
-                          style={{ borderColor: brand, color: brand }}
-                        >
-                          −
-                        </button>
-                        <span className="w-4 text-center text-sm font-bold">{item.quantity}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const mi = menuItems.find((m) => m.id === item.menuItemId);
-                            if (mi) setQty(mi, 1);
-                          }}
-                          className="flex h-7 w-7 items-center justify-center rounded-full text-base font-bold text-white"
-                          style={{ backgroundColor: brand }}
-                        >
-                          +
-                        </button>
-                      </div>
-                      <span className="text-sm font-medium text-gray-900">{item.name}</span>
+                  <div
+                    key={item.id}
+                    className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {item.quantity}× {item.name}
+                      </p>
+                      {item.selectedAddons.length > 0 && (
+                        <p className="mt-0.5 text-xs text-gray-500">
+                          + {item.selectedAddons.map((a) => a.name).join(", ")}
+                        </p>
+                      )}
+                      {item.notes && (
+                        <p className="mt-0.5 text-xs italic text-gray-400">
+                          Obs: {item.notes}
+                        </p>
+                      )}
                     </div>
-                    <span className="shrink-0 text-sm font-semibold text-gray-900">
-                      {fmt(item.unitPrice * item.quantity)}
-                    </span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-sm font-semibold text-gray-900">
+                        {fmt(item.unitPrice * item.quantity)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeCartItem(item.id)}
+                        className="text-lg leading-none text-gray-400 hover:text-red-500"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                 ))}
 
-                <div className="border-t border-gray-100 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setScreen("menu")}
+                  className="w-full rounded-xl border py-3 text-sm font-medium"
+                  style={{ borderColor: brand, color: brand }}
+                >
+                  + Adicionar mais itens
+                </button>
+
+                <div className="rounded-xl bg-gray-50 p-3">
                   <div className="flex justify-between text-base font-bold text-gray-900">
-                    <span>Total</span>
+                    <span>Subtotal</span>
                     <span>{fmt(cartTotal)}</span>
                   </div>
                 </div>
@@ -377,7 +550,7 @@ export default function CardapioClient({
                 <button
                   type="button"
                   onClick={() => setScreen("checkout")}
-                  className="mt-2 w-full rounded-xl py-3.5 text-sm font-bold text-white"
+                  className="w-full rounded-xl py-3.5 text-sm font-bold text-white"
                   style={{ backgroundColor: brand }}
                 >
                   Fazer pedido
@@ -387,9 +560,11 @@ export default function CardapioClient({
 
             {/* Checkout screen */}
             {screen === "checkout" && (
-              <div className="p-4 space-y-5">
+              <div className="space-y-5 p-4">
                 {orderError && (
-                  <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{orderError}</p>
+                  <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {orderError}
+                  </p>
                 )}
 
                 <div className="space-y-3">
@@ -398,8 +573,10 @@ export default function CardapioClient({
                     type="text"
                     placeholder="Seu nome"
                     value={checkout.name}
-                    onChange={(e) => setCheckout((p) => ({ ...p, name: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                    onChange={(e) =>
+                      setCheckout((p) => ({ ...p, name: e.target.value }))
+                    }
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
                   />
                   <input
                     type="tel"
@@ -411,7 +588,7 @@ export default function CardapioClient({
                         phone: e.target.value.replace(/\D/g, ""),
                       }))
                     }
-                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
                   />
                 </div>
 
@@ -421,11 +598,7 @@ export default function CardapioClient({
                     {(["delivery", "pickup"] as const).map((type) => (
                       <label
                         key={type}
-                        className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 ${
-                          checkout.deliveryType === type
-                            ? "border-current bg-opacity-5"
-                            : "border-gray-200"
-                        }`}
+                        className="flex cursor-pointer items-center gap-3 rounded-xl border p-3"
                         style={
                           checkout.deliveryType === type
                             ? { borderColor: brand, backgroundColor: `${brand}10` }
@@ -436,8 +609,9 @@ export default function CardapioClient({
                           type="radio"
                           name="deliveryType"
                           checked={checkout.deliveryType === type}
-                          onChange={() => setCheckout((p) => ({ ...p, deliveryType: type }))}
-                          className="accent-brand"
+                          onChange={() =>
+                            setCheckout((p) => ({ ...p, deliveryType: type }))
+                          }
                         />
                         <span className="text-sm font-medium text-gray-900">
                           {type === "delivery"
@@ -449,14 +623,30 @@ export default function CardapioClient({
                   </div>
                 )}
 
+                {/* Address — only when delivery */}
+                {checkout.deliveryType === "delivery" && (
+                  <div>
+                    <h3 className="mb-2 text-sm font-semibold text-gray-700">
+                      Endereço de entrega
+                    </h3>
+                    <textarea
+                      placeholder="Rua, número, bairro, complemento..."
+                      value={checkout.address}
+                      onChange={(e) =>
+                        setCheckout((p) => ({ ...p, address: e.target.value }))
+                      }
+                      rows={3}
+                      className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold text-gray-700">Pagamento</h3>
                   {establishment.accepted_payment_methods.map((method) => (
                     <label
                       key={method}
-                      className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 ${
-                        checkout.paymentMethod === method ? "" : "border-gray-200"
-                      }`}
+                      className="flex cursor-pointer items-center gap-3 rounded-xl border p-3"
                       style={
                         checkout.paymentMethod === method
                           ? { borderColor: brand, backgroundColor: `${brand}10` }
@@ -470,7 +660,6 @@ export default function CardapioClient({
                         onChange={() =>
                           setCheckout((p) => ({ ...p, paymentMethod: method }))
                         }
-                        className="accent-brand"
                       />
                       <span className="text-sm font-medium text-gray-900">
                         {PAYMENT_LABELS[method]}
@@ -479,7 +668,7 @@ export default function CardapioClient({
                   ))}
                 </div>
 
-                <div className="rounded-xl bg-gray-50 p-4 space-y-1">
+                <div className="space-y-1 rounded-xl bg-gray-50 p-4">
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Subtotal</span>
                     <span>{fmt(cartTotal)}</span>
@@ -490,7 +679,7 @@ export default function CardapioClient({
                       <span>{fmt(deliveryFee)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-base font-bold text-gray-900 pt-1 border-t border-gray-200 mt-1">
+                  <div className="mt-1 flex justify-between border-t border-gray-200 pt-2 text-base font-bold text-gray-900">
                     <span>Total</span>
                     <span>{fmt(total)}</span>
                   </div>
@@ -510,7 +699,7 @@ export default function CardapioClient({
 
             {/* Confirmation screen */}
             {screen === "confirmed" && orderResult && (
-              <div className="p-6 space-y-6 text-center">
+              <div className="space-y-6 p-6 text-center">
                 <div>
                   <div
                     className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full text-3xl text-white"
@@ -524,22 +713,35 @@ export default function CardapioClient({
                   </p>
                 </div>
 
-                {/* Order summary */}
-                <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-left space-y-1">
+                <div className="space-y-1 rounded-2xl border border-gray-100 bg-gray-50 p-4 text-left">
                   {cart.map((item) => (
-                    <div key={item.menuItemId} className="flex justify-between text-sm">
-                      <span className="text-gray-700">
-                        {item.quantity}× {item.name}
-                      </span>
-                      <span className="font-medium text-gray-900">
-                        {fmt(item.unitPrice * item.quantity)}
-                      </span>
+                    <div key={item.id}>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-700">
+                          {item.quantity}× {item.name}
+                        </span>
+                        <span className="font-medium text-gray-900">
+                          {fmt(item.unitPrice * item.quantity)}
+                        </span>
+                      </div>
+                      {(item.selectedAddons.length > 0 || item.notes) && (
+                        <p className="mb-1 text-xs text-gray-400">
+                          {[
+                            item.selectedAddons.map((a) => a.name).join(", "),
+                            item.notes,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      )}
                     </div>
                   ))}
                   {orderResult.delivery_fee > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Taxa de entrega</span>
-                      <span className="text-gray-700">{fmt(orderResult.delivery_fee)}</span>
+                      <span className="text-gray-700">
+                        {fmt(orderResult.delivery_fee)}
+                      </span>
                     </div>
                   )}
                   <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-bold text-gray-900">
@@ -548,14 +750,13 @@ export default function CardapioClient({
                   </div>
                 </div>
 
-                {/* PIX */}
                 {orderResult.pix_copy_paste && (
-                  <div className="rounded-2xl border border-green-100 bg-green-50 p-4 text-left space-y-3">
+                  <div className="space-y-3 rounded-2xl border border-green-100 bg-green-50 p-4 text-left">
                     <p className="text-sm font-semibold text-green-800">
                       Pague agora via Pix para confirmar o pedido
                     </p>
                     <div className="rounded-xl border border-green-200 bg-white px-3 py-2">
-                      <p className="break-all text-xs text-gray-600 font-mono leading-relaxed">
+                      <p className="break-all font-mono text-xs leading-relaxed text-gray-600">
                         {orderResult.pix_copy_paste}
                       </p>
                     </div>
