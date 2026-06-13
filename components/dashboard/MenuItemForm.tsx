@@ -149,6 +149,25 @@ export default function MenuItemForm({
             </label>
           </div>
         )}
+
+        <div className="sm:col-span-2">
+          <label className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <input
+              type="checkbox"
+              checked={form.is_combo}
+              onChange={(e) => updateField("is_combo", e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+            />
+            <span>
+              <span className="block text-sm font-medium text-gray-900">
+                Combo
+              </span>
+              <span className="mt-0.5 block text-xs text-gray-500">
+                Marque quando este item combina prato + bebida ou outros itens em preço único (ex: marmita + suco = R$ 25).
+              </span>
+            </span>
+          </label>
+        </div>
       </div>
 
       <div className="mt-4">

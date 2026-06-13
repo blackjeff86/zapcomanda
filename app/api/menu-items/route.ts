@@ -10,6 +10,7 @@ import { z } from "zod";
 
 const createMenuItemSchema = menuItemSchema.extend({
   is_daily: z.boolean().optional(),
+  is_combo: z.boolean().optional(),
 });
 
 const MENU_SELECT = "*, menu_item_addons(*)";
@@ -104,6 +105,7 @@ export async function POST(request: NextRequest) {
             access.establishment.category,
             parsed.data.is_daily
           ),
+          is_combo: parsed.data.is_combo ?? false,
           sort_order: 99,
           created_at: ts,
           updated_at: ts,
@@ -130,6 +132,7 @@ export async function POST(request: NextRequest) {
         access.establishment.category,
         parsed.data.is_daily
       ),
+      is_combo: parsed.data.is_combo ?? false,
       sort_order: 99,
     };
 

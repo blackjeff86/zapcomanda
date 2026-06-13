@@ -102,6 +102,7 @@ export interface MenuItem {
   category: string;
   is_active: boolean;
   is_daily: boolean;
+  is_combo: boolean;
   sort_order: number;
   created_at: string;
   updated_at: string;

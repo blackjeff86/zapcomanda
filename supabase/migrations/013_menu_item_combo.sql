@@ -1,0 +1,2 @@
+ALTER TABLE zapcomanda.menu_items
+  ADD COLUMN IF NOT EXISTS is_combo BOOLEAN NOT NULL DEFAULT FALSE;

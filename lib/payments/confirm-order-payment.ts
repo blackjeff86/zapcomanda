@@ -31,12 +31,12 @@ export async function confirmOrderPayment(orderId: string): Promise<void> {
     whatsapp_instance_id: string | null;
   };
 
-  await sendText({
+  sendText({
     phone: customer.phone,
     message:
       `🎉 Pagamento confirmado!\n\n` +
       `Seu pedido no *${establishment.name}* foi recebido e já está em preparo. ` +
       `Obrigado pela preferência!`,
     instanceId: establishment.whatsapp_instance_id || undefined,
-  });
+  }).catch(() => {});
 }

@@ -20,6 +20,7 @@ export function normalizeMenuItemRow(
     category: String(raw.category),
     is_active: Boolean(raw.is_active),
     is_daily: Boolean(raw.is_daily),
+    is_combo: Boolean(raw.is_combo),
     sort_order: Number(raw.sort_order),
     created_at: String(raw.created_at),
     updated_at: String(raw.updated_at),

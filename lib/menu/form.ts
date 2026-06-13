@@ -7,6 +7,7 @@ export type MenuItemFormState = {
   category: string;
   photo_url: string;
   is_daily: boolean;
+  is_combo: boolean;
   addons: Array<{ name: string; price: string }>;
 };
 
@@ -17,6 +18,7 @@ export const EMPTY_MENU_ITEM_FORM: MenuItemFormState = {
   category: "Geral",
   photo_url: "",
   is_daily: false,
+  is_combo: false,
   addons: [],
 };
 
@@ -28,6 +30,7 @@ export function menuItemToFormState(item: MenuItemWithAddons): MenuItemFormState
     category: item.category,
     photo_url: item.photo_url ?? "",
     is_daily: item.is_daily,
+    is_combo: item.is_combo,
     addons: item.addons.map((a) => ({
       name: a.name,
       price: String(a.price),
@@ -43,6 +46,7 @@ export function formStateToPayload(form: MenuItemFormState) {
     category: form.category,
     photo_url: form.photo_url,
     is_daily: form.is_daily,
+    is_combo: form.is_combo,
     addons: form.addons
       .filter((a) => a.name.trim())
       .map((a) => ({ name: a.name.trim(), price: Number(a.price) || 0 })),
@@ -64,6 +68,7 @@ export function mergeDevMockItem(
     category: payload.category,
     photo_url: payload.photo_url || null,
     is_daily: payload.is_daily,
+    is_combo: payload.is_combo,
     updated_at: ts,
     addons: payload.addons.map((addon, index) => ({
       id: item.addons[index]?.id ?? `mock-addon-${item.id}-${index}`,

@@ -12,6 +12,7 @@ type MenuItem = {
   price: number;
   photo_url: string | null;
   category: string;
+  is_combo: boolean;
   sort_order: number;
   menu_item_addons: Addon[];
 };
@@ -299,7 +300,14 @@ export default function CardapioClient({
               )}
               <div className="flex min-w-0 flex-1 flex-col justify-between">
                 <div>
-                  <p className="font-semibold text-gray-900 leading-tight">{item.name}</p>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <p className="font-semibold text-gray-900 leading-tight">{item.name}</p>
+                    {item.is_combo && (
+                      <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
+                        Combo
+                      </span>
+                    )}
+                  </div>
                   {item.description && (
                     <p className="mt-0.5 text-xs text-gray-500 line-clamp-2">
                       {item.description}
@@ -371,7 +379,14 @@ export default function CardapioClient({
 
             <div className="space-y-4 p-5">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">{modalItem.name}</h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-lg font-bold text-gray-900">{modalItem.name}</h2>
+                  {modalItem.is_combo && (
+                    <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
+                      Combo
+                    </span>
+                  )}
+                </div>
                 {modalItem.description && (
                   <p className="mt-1 text-sm text-gray-500">{modalItem.description}</p>
                 )}

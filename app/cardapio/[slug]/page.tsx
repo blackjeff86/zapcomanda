@@ -39,7 +39,7 @@ export default async function CardapioPage({ params }: Props) {
     .schema("zapcomanda")
     .from("menu_items")
     .select(
-      "id, name, description, price, photo_url, category, sort_order, menu_item_addons(id, name, price, is_active, sort_order)"
+      "id, name, description, price, photo_url, category, is_combo, sort_order, menu_item_addons(id, name, price, is_active, sort_order)"
     )
     .eq("establishment_id", establishment.id)
     .eq("is_active", true)

@@ -306,6 +306,11 @@ export default function MenuManager({
                                 Cardápio do dia
                               </span>
                             )}
+                            {item.is_combo && (
+                              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
+                                Combo
+                              </span>
+                            )}
                           </div>
                           {item.description && (
                             <p className="mt-1 text-sm text-gray-500">{item.description}</p>
