@@ -148,7 +148,13 @@ export default function OrderCard({
       <div className="p-3 sm:p-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <p className="text-xs text-gray-500">Pedido das {formatTime(order.created_at)}</p>
+            <p className="text-xs text-gray-500">
+              Pedido das {formatTime(order.created_at)}
+              {" · "}
+              <span className="font-mono font-semibold tracking-wide">
+                #{order.id.slice(0, 8).toUpperCase()}
+              </span>
+            </p>
             <h3 className="text-lg font-bold text-gray-900 sm:text-xl">{customerName}</h3>
             {customerPhone && (
               <p className="text-xs text-gray-500 sm:text-sm">{customerPhone}</p>
