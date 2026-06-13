@@ -12,13 +12,13 @@ const fmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function BillingBanner({ notification, userRole }: BillingBannerProps) {
-  if (userRole === "caixa") return null;
-
   const [copied, setCopied] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showQr, setShowQr] = useState(false);
+
+  if (userRole === "caixa") return null;
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(notification.pix_br_code)}`;
 
