@@ -441,28 +441,36 @@ export default function CardapioClient({
 
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
-      <CardapioStoreHeader
-        establishment={establishment}
-        onMyOrders={openMyOrders}
-      />
+      <CardapioStoreHeader establishment={establishment} />
 
-      {/* Category tabs */}
-      <div className="sticky top-0 z-20 flex gap-2 overflow-x-auto border-b border-gray-100 bg-white px-4 py-2.5 shadow-sm">
-        {categories.map((cat) => (
+      {/* Category tabs + Meus pedidos */}
+      <div className="sticky top-0 z-20 border-b border-gray-100 bg-white shadow-sm">
+        <div className="flex items-center gap-2 px-3 py-2 sm:px-4">
+          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => scrollToCategory(cat)}
+                className="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition"
+                style={
+                  activeCategory === cat
+                    ? { backgroundColor: brand, color: "#fff" }
+                    : { backgroundColor: "#f3f4f6", color: "#374151" }
+                }
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
           <button
-            key={cat}
             type="button"
-            onClick={() => scrollToCategory(cat)}
-            className="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition"
-            style={
-              activeCategory === cat
-                ? { backgroundColor: brand, color: "#fff" }
-                : { backgroundColor: "#f3f4f6", color: "#374151" }
-            }
+            onClick={() => openMyOrders()}
+            className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100"
           >
-            {cat}
+            📋 Pedidos
           </button>
-        ))}
+        </div>
       </div>
 
       {/* Items grouped by category */}

@@ -27,10 +27,8 @@ function fmtCurrency(value: number) {
 
 export default function CardapioStoreHeader({
   establishment,
-  onMyOrders,
 }: {
   establishment: StorefrontEstablishment;
-  onMyOrders: () => void;
 }) {
   const brand = establishment.primary_color;
   const barColor = darkenHex(brand, 0.45);
@@ -54,36 +52,29 @@ export default function CardapioStoreHeader({
 
   return (
     <header className="bg-white">
-      {/* Cover + actions */}
+      {/* Cover */}
       <div className="relative">
         {establishment.cover_url ? (
           <img
             src={establishment.cover_url}
             alt=""
-            className="h-36 w-full object-cover sm:h-44"
+            className="h-28 w-full object-cover sm:h-32"
           />
         ) : (
           <div
-            className="h-36 w-full sm:h-44"
+            className="h-28 w-full sm:h-32"
             style={{
               background: `linear-gradient(135deg, ${brand} 0%, ${darkenHex(brand, 0.2)} 100%)`,
             }}
           />
         )}
-
-        <button
-          type="button"
-          onClick={onMyOrders}
-          className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-white/40 bg-white/95 px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-sm backdrop-blur-sm"
-        >
-          <span>📋</span>
-          <span>Meus Pedidos</span>
-        </button>
       </div>
 
-      {/* Logo + identity */}
-      <div className="relative px-4 pb-4 text-center">
-        <div className="mx-auto -mt-10 mb-3 flex h-[88px] w-[88px] items-center justify-center overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md">
+      {/* Logo + identity — compact, flush with info bar */}
+      <div className="relative px-4 pt-0 text-center">
+        <div
+          className="mx-auto -mt-8 mb-2 flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md"
+        >
           {establishment.logo_url && !logoError ? (
             <img
               src={establishment.logo_url}
@@ -92,33 +83,32 @@ export default function CardapioStoreHeader({
               onError={() => setLogoError(true)}
             />
           ) : (
-            <span
-              className="text-2xl font-bold"
-              style={{ color: brand }}
-            >
+            <span className="text-xl font-bold" style={{ color: brand }}>
               {establishment.name[0]?.toUpperCase() ?? "?"}
             </span>
           )}
         </div>
 
-        <h1 className="text-lg font-bold uppercase tracking-wide text-gray-900 sm:text-xl">
+        <h1 className="text-base font-bold uppercase leading-tight tracking-wide text-gray-900 sm:text-lg">
           {establishment.name}
         </h1>
 
         {establishment.tagline?.trim() && (
-          <p className="mt-1 text-sm text-gray-600">{establishment.tagline}</p>
+          <p className="mt-0.5 text-xs text-gray-600 sm:text-sm">
+            {establishment.tagline}
+          </p>
         )}
 
         <button
           type="button"
           onClick={() => setShowStatusInfo((v) => !v)}
-          className="mt-3 inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-1.5 text-sm font-bold shadow-sm"
+          className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-bold shadow-sm"
         >
           <span className={isOpen ? "text-green-600" : "text-red-600"}>
             {isOpen ? "ABERTO" : "FECHADO"}
           </span>
           <svg
-            className={`h-4 w-4 text-gray-400 transition ${showStatusInfo ? "rotate-180" : ""}`}
+            className={`h-3.5 w-3.5 text-gray-400 transition ${showStatusInfo ? "rotate-180" : ""}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -129,7 +119,7 @@ export default function CardapioStoreHeader({
         </button>
 
         {showStatusInfo && (
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-1.5 text-[11px] text-gray-500">
             {isOpen
               ? establishment.order_cutoff_time
                 ? `Pedidos até ${establishment.order_cutoff_time.slice(0, 5)}`
@@ -141,9 +131,9 @@ export default function CardapioStoreHeader({
         )}
       </div>
 
-      {/* Info bar */}
+      {/* Info bar — attached directly below identity */}
       <div
-        className="grid grid-cols-3 gap-1 px-2 py-3 text-center text-white sm:px-4"
+        className="mt-2 grid grid-cols-3 gap-1 px-2 py-2.5 text-center text-white sm:px-4 sm:py-3"
         style={{ backgroundColor: barColor }}
       >
         <div className="px-1">
@@ -152,7 +142,7 @@ export default function CardapioStoreHeader({
           </p>
           <p className="mt-0.5 text-xs font-semibold sm:text-sm">{deliveryLabel}</p>
         </div>
-        <div className="px-1 border-x border-white/20">
+        <div className="border-x border-white/20 px-1">
           <p className="text-[10px] font-medium uppercase tracking-wide opacity-90 sm:text-xs">
             Tempo de espera
           </p>
