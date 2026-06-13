@@ -79,6 +79,10 @@ export interface Establishment {
   whatsapp_number: string;
   category: EstablishmentCategory;
   logo_url: string | null;
+  cover_url: string | null;
+  tagline: string | null;
+  wait_time_text: string | null;
+  is_manually_closed: boolean;
   primary_color: string;
   plan: PlanType;
   asaas_customer_id: string | null;

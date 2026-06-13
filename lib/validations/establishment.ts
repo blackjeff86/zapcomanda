@@ -19,6 +19,10 @@ export const establishmentSettingsSchema = z
     .regex(/^[a-z0-9-]+$/, "Use apenas letras minúsculas, números e hífens")
     .optional(),
   logo_url: z.string().url().optional().or(z.literal("")),
+  cover_url: z.string().url().optional().or(z.literal("")),
+  tagline: z.string().max(120, "Máximo 120 caracteres").optional().or(z.literal("")),
+  wait_time_text: z.string().max(40, "Máximo 40 caracteres").optional().or(z.literal("")),
+  is_manually_closed: z.boolean().optional(),
   order_cutoff_time: z
     .string()
     .regex(/^\d{2}:\d{2}(:\d{2})?$/, "Horário inválido")

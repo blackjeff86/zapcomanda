@@ -6,6 +6,7 @@ import {
   categoryAnchorId,
   groupMenuItemsByCategory,
 } from "@/lib/menu/group-by-category";
+import CardapioStoreHeader from "./CardapioStoreHeader";
 import MyOrdersPanel from "./MyOrdersPanel";
 
 type Addon = { id: string; name: string; price: number; is_active: boolean };
@@ -29,6 +30,11 @@ type Establishment = {
   name: string;
   category: string;
   logo_url: string | null;
+  cover_url: string | null;
+  tagline: string | null;
+  wait_time_text: string | null;
+  is_manually_closed: boolean;
+  whatsapp_number: string;
   primary_color: string;
   accepted_payment_methods: PaymentMethod[];
   delivery_fee_enabled: boolean;
@@ -111,7 +117,6 @@ export default function CardapioClient({
   const [activeCategory, setActiveCategory] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [screen, setScreen] = useState<Screen>("menu");
-  const [logoError, setLogoError] = useState(false);
 
   // Item detail modal
   const [modalItem, setModalItem] = useState<MenuItem | null>(null);
@@ -436,36 +441,13 @@ export default function CardapioClient({
 
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
-      {/* Header */}
-      <header
-        className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3 shadow-sm"
-        style={{ backgroundColor: brand }}
-      >
-        {establishment.logo_url && !logoError ? (
-          <img
-            src={establishment.logo_url}
-            alt={establishment.name}
-            className="h-9 w-9 rounded-full border-2 border-white/30 object-cover"
-            onError={() => setLogoError(true)}
-          />
-        ) : (
-          <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white/30 bg-white/20 text-sm font-bold text-white">
-            {establishment.name[0]?.toUpperCase()}
-          </div>
-        )}
-        <h1 className="flex-1 text-base font-bold text-white">{establishment.name}</h1>
-        <button
-          type="button"
-          onClick={() => openMyOrders()}
-          className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/30"
-        >
-          <span>📋</span>
-          <span>Meus Pedidos</span>
-        </button>
-      </header>
+      <CardapioStoreHeader
+        establishment={establishment}
+        onMyOrders={openMyOrders}
+      />
 
       {/* Category tabs */}
-      <div className="sticky top-[57px] z-10 flex gap-2 overflow-x-auto bg-white px-4 py-2.5 shadow-sm">
+      <div className="sticky top-0 z-20 flex gap-2 overflow-x-auto border-b border-gray-100 bg-white px-4 py-2.5 shadow-sm">
         {categories.map((cat) => (
           <button
             key={cat}
@@ -489,7 +471,7 @@ export default function CardapioClient({
           <section
             key={category}
             id={categoryAnchorId(category)}
-            className="scroll-mt-28"
+            className="scroll-mt-14"
           >
             <div className="mb-3 flex items-center gap-2">
               <span className="text-brand" style={{ color: brand }}>›</span>

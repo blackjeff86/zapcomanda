@@ -41,6 +41,10 @@ export default function SettingsForm({
     whatsapp_number: establishment.whatsapp_number,
     primary_color: establishment.primary_color,
     logo_url: establishment.logo_url ?? "",
+    cover_url: establishment.cover_url ?? "",
+    tagline: establishment.tagline ?? "",
+    wait_time_text: establishment.wait_time_text ?? "",
+    is_manually_closed: establishment.is_manually_closed ?? false,
     order_cutoff_time: cutoff,
     accepted_payment_methods: establishment.accepted_payment_methods ?? ["pix"],
     delivery_fee_enabled: establishment.delivery_fee_enabled ?? false,
@@ -204,6 +208,58 @@ export default function SettingsForm({
               />
             </div>
           )}
+
+          <div className="sm:col-span-2">
+            <ImageUpload
+              value={form.cover_url}
+              onChange={(url) => setForm((p) => ({ ...p, cover_url: url }))}
+              folder="covers"
+              label="Foto de capa do cardápio"
+              hint="Banner no topo da página pública · JPG, PNG ou WebP"
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Frase de destaque (opcional)
+            </label>
+            <input
+              value={form.tagline}
+              onChange={(e) => setForm((p) => ({ ...p, tagline: e.target.value }))}
+              placeholder="Ex.: Difícil é resistir!"
+              maxLength={120}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Tempo de espera (cardápio)
+            </label>
+            <input
+              value={form.wait_time_text}
+              onChange={(e) => setForm((p) => ({ ...p, wait_time_text: e.target.value }))}
+              placeholder="Ex.: 30-40 min"
+              maxLength={40}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+            />
+          </div>
+
+          <div className="flex items-end">
+            <label className="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-lg border border-gray-200 px-3 py-2.5">
+              <input
+                type="checkbox"
+                checked={form.is_manually_closed}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, is_manually_closed: e.target.checked }))
+                }
+                className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+              />
+              <span className="text-sm font-medium text-gray-900">
+                Mostrar como FECHADO no cardápio
+              </span>
+            </label>
+          </div>
 
           <div className="sm:col-span-2">
             <ImageUpload

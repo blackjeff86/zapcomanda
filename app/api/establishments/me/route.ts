@@ -42,6 +42,11 @@ export async function PATCH(request: NextRequest) {
         ...access.establishment,
         ...parsed.data,
         logo_url: parsed.data.logo_url || null,
+        cover_url: parsed.data.cover_url || null,
+        tagline: parsed.data.tagline?.trim() || null,
+        wait_time_text: parsed.data.wait_time_text?.trim() || null,
+        is_manually_closed:
+          parsed.data.is_manually_closed ?? access.establishment.is_manually_closed,
         order_cutoff_time: proFields.order_cutoff_time ?? null,
         accepted_payment_methods:
           parsed.data.accepted_payment_methods ??
@@ -67,6 +72,11 @@ export async function PATCH(request: NextRequest) {
       whatsapp_number: parsed.data.whatsapp_number.replace(/\D/g, ""),
       primary_color: parsed.data.primary_color,
       logo_url: parsed.data.logo_url || null,
+      cover_url: parsed.data.cover_url || null,
+      tagline: parsed.data.tagline?.trim() || null,
+      wait_time_text: parsed.data.wait_time_text?.trim() || null,
+      is_manually_closed:
+        parsed.data.is_manually_closed ?? access.establishment.is_manually_closed,
       order_cutoff_time: proFields.order_cutoff_time ?? null,
     };
 

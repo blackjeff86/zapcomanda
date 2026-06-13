@@ -28,7 +28,7 @@ export default async function CardapioPage({ params }: Props) {
     .schema("zapcomanda")
     .from("establishments")
     .select(
-      "id, slug, name, category, logo_url, primary_color, accepted_payment_methods, delivery_fee_enabled, delivery_fee_amount, pix_key, order_cutoff_time"
+      "id, slug, name, category, logo_url, cover_url, tagline, wait_time_text, is_manually_closed, whatsapp_number, primary_color, accepted_payment_methods, delivery_fee_enabled, delivery_fee_amount, pix_key, order_cutoff_time"
     )
     .eq("slug", slug)
     .maybeSingle();
