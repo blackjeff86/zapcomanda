@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import PlanSettingsCollapsible from "@/components/dashboard/PlanSettingsCollapsible";
 import ProFeatureUpsell from "@/components/dashboard/ProFeatureUpsell";
+import WhatsAppQrConnect from "@/components/dashboard/WhatsAppQrConnect";
 import {
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHODS,
@@ -28,13 +30,13 @@ export default function SettingsForm({
   establishment: Establishment;
   devMock?: boolean;
 }) {
+  const router = useRouter();
   const cutoff = establishment.order_cutoff_time?.slice(0, 5) ?? "";
 
   const [form, setForm] = useState({
     name: establishment.name,
     whatsapp_number: establishment.whatsapp_number,
     primary_color: establishment.primary_color,
-    logo_url: establishment.logo_url ?? "",
     order_cutoff_time: cutoff,
     accepted_payment_methods: establishment.accepted_payment_methods ?? ["pix"],
     delivery_fee_enabled: establishment.delivery_fee_enabled ?? false,
@@ -70,6 +72,7 @@ export default function SettingsForm({
           ? "Salvo localmente (modo exemplo)."
           : "Configurações salvas com sucesso!"
       );
+      if (!devMock) router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao salvar");
     } finally {
@@ -192,18 +195,6 @@ export default function SettingsForm({
             </div>
           )}
 
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              URL do logo (opcional)
-            </label>
-            <input
-              type="url"
-              value={form.logo_url}
-              onChange={(e) => setForm((p) => ({ ...p, logo_url: e.target.value }))}
-              placeholder="https://..."
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-            />
-          </div>
         </div>
 
         <div className="mt-6 border-t border-gray-100 pt-6">
@@ -371,20 +362,19 @@ export default function SettingsForm({
 
       <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
         <h3 className="font-semibold text-gray-900">Integração WhatsApp</h3>
-        <p className="mt-2 text-sm text-gray-600">
-          Configure o webhook da Evolution API ou Z-API apontando para:
+        <p className="mt-1 text-sm text-gray-500">
+          Escaneie o QR Code com o WhatsApp do negócio para ativar o bot.
         </p>
-        <code className="mt-3 block break-all rounded-lg bg-gray-100 px-3 py-2 text-xs sm:text-sm">
-          /api/webhooks/whatsapp
-        </code>
-        <p className="mt-2 text-xs text-gray-500">
-          URL completa: seu domínio de produção + o caminho acima (ex.{" "}
-          <span className="font-mono">https://seudominio.com/api/webhooks/whatsapp</span>).
-        </p>
-        <p className="mt-3 text-xs text-gray-400">
-          Eventos: mensagens recebidas. O bot usa o número cadastrado acima para identificar seu
-          estabelecimento.
-        </p>
+        <WhatsAppQrConnect />
+
+        <div className="mt-5 border-t border-gray-100 pt-5">
+          <p className="text-xs text-gray-400">
+            O bot local envia as mensagens para:{" "}
+            <span className="font-mono break-all">
+              https://zapcomanda.vercel.app/api/webhooks/whatsapp
+            </span>
+          </p>
+        </div>
 
         {isPro ? (
           <div className="mt-5 border-t border-gray-100 pt-5">
