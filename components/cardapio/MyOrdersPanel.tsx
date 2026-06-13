@@ -74,9 +74,20 @@ export default function MyOrdersPanel({
   initialPhone: string;
   onClose: () => void;
 }) {
-  const [phone, setPhone] = useState(
-    initialPhone.replace(/\D/g, "").slice(-11)
-  );
+  const STORAGE_KEY = `zapcomanda_customer_${establishmentId}`;
+
+  const [phone, setPhone] = useState(() => {
+    const fromProp = initialPhone.replace(/\D/g, "").slice(-11);
+    if (fromProp) return fromProp;
+    try {
+      const raw = localStorage.getItem(`zapcomanda_customer_${establishmentId}`);
+      if (!raw) return "";
+      const saved = JSON.parse(raw) as { phone?: string };
+      return (saved.phone || "").slice(-11);
+    } catch {
+      return "";
+    }
+  });
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState<CustomerOrder[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -99,6 +110,16 @@ export default function MyOrdersPanel({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erro ao buscar pedidos");
       setOrders(data.orders);
+
+      // Persist phone so user doesn't need to retype after refresh
+      try {
+        const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          ...existing,
+          phone: digits,
+          savedAt: Date.now(),
+        }));
+      } catch { /* private browsing or quota exceeded */ }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao buscar pedidos");
     } finally {

@@ -126,7 +126,7 @@ export default function CardapioClient({
   const [showMyOrders, setShowMyOrders] = useState(false);
 
   const CUSTOMER_KEY = `zapcomanda_customer_${establishment.id}`;
-  const CUSTOMER_TTL = 7_200_000; // 2 hours
+  const CUSTOMER_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 
   // Restore saved customer data on mount
   useEffect(() => {
