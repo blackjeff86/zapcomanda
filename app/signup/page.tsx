@@ -1,12 +1,15 @@
 import Link from "next/link";
 import AuthForm from "@/components/auth/AuthForm";
 import Logo from "@/components/brand/Logo";
+import { isAuthBypassed } from "@/lib/dev-auth";
 
 export const metadata = {
   title: "Cadastro — ZapComanda",
 };
 
 export default function SignupPage() {
+  const devBypass = isAuthBypassed();
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
@@ -19,7 +22,7 @@ export default function SignupPage() {
           </p>
         </div>
 
-        <AuthForm mode="signup" />
+        <AuthForm mode="signup" devBypass={devBypass} />
       </div>
     </main>
   );

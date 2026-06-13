@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { onboardingSchema } from "@/lib/validations/onboarding";
+import { resolveMenuItemIsDaily } from "@/lib/plans/features";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { menu_items, logo_url, ...establishmentData } = parsed.data;
+    const { menu_items, logo_url, plan: selectedPlan, ...establishmentData } = parsed.data;
 
     const { data: establishment, error: establishmentError } = await supabase
       .schema("zapcomanda")
@@ -60,7 +61,11 @@ export async function POST(request: NextRequest) {
       price: item.price,
       category: item.category,
       photo_url: item.photo_url || null,
-      is_daily: establishmentData.category === "quentinha",
+      is_daily: resolveMenuItemIsDaily(
+        "basic",
+        establishmentData.category,
+        establishmentData.category === "quentinha" && selectedPlan === "pro"
+      ),
       sort_order: index,
     }));
 
@@ -93,7 +98,14 @@ export async function POST(request: NextRequest) {
       if (addonError) throw addonError;
     }
 
-    return NextResponse.json({ id: establishment.id }, { status: 201 });
+    return NextResponse.json(
+      {
+        id: establishment.id,
+        needs_plan_payment: selectedPlan === "pro",
+        selected_plan: selectedPlan,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Establishment creation error:", error);
     return NextResponse.json(

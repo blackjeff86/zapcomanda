@@ -4,9 +4,24 @@ export type OrderStatus =
   | "awaiting_payment"
   | "paid"
   | "preparing"
+  | "out_for_delivery"
   | "delivered"
   | "cancelled";
 export type PaymentStatus = "pending" | "confirmed" | "expired" | "refunded";
+
+export type PaymentMethod =
+  | "pix"
+  | "credit_card"
+  | "debit_card"
+  | "cash"
+  | "meal_voucher";
+
+export type PixKeyType =
+  | "cpf"
+  | "cnpj"
+  | "email"
+  | "phone"
+  | "random";
 
 export type WhatsAppSessionStep =
   | "idle"
@@ -16,6 +31,7 @@ export type WhatsAppSessionStep =
   | "selecting_addons"
   | "adding_notes"
   | "asking_more_items"
+  | "selecting_payment_method"
   | "confirming_order"
   | "awaiting_payment";
 
@@ -66,6 +82,11 @@ export interface Establishment {
   asaas_subscription_id: string | null;
   whatsapp_instance_id: string | null;
   order_cutoff_time: string | null;
+  accepted_payment_methods: PaymentMethod[];
+  delivery_fee_enabled: boolean;
+  delivery_fee_amount: number;
+  pix_key_type: PixKeyType | null;
+  pix_key: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -101,6 +122,13 @@ export interface Order {
   status: OrderStatus;
   total_amount: number;
   notes: string | null;
+  payment_method: PaymentMethod | null;
+  payment_collected: boolean;
+  delivery_fee: number;
+  delivered_at: string | null;
+  delivery_token: string | null;
+  delivery_photo_url: string | null;
+  delivery_confirmed_by: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { getLoginHref } from "@/lib/dev-auth";
 
 export default function CTA() {
+  const loginHref = getLoginHref();
+
   return (
     <section className="py-20 sm:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -25,7 +28,7 @@ export default function CTA() {
               Criar minha conta grátis
             </Link>
             <Link
-              href="/login"
+              href={loginHref}
               className="inline-flex rounded-full border border-white/30 px-8 py-4 text-base font-semibold text-white transition hover:bg-white/10"
             >
               Já tenho conta

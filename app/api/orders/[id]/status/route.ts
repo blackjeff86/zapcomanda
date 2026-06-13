@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isAuthBypassed } from "@/lib/dev-auth";
+import { completeOrderDelivery } from "@/lib/orders/complete-delivery";
+import { buildOrderStatusUpdate } from "@/lib/orders/select";
 import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/types/database";
 import { z } from "zod";
@@ -8,9 +12,11 @@ const statusSchema = z.object({
     "awaiting_payment",
     "paid",
     "preparing",
+    "out_for_delivery",
     "delivered",
     "cancelled",
   ]),
+  payment_collected: z.boolean().optional(),
 });
 
 export async function PATCH(
@@ -28,6 +34,45 @@ export async function PATCH(
       );
     }
 
+    const newStatus = parsed.data.status as OrderStatus;
+
+    if (isAuthBypassed()) {
+      if (newStatus === "delivered") {
+        await completeOrderDelivery(params.id, {
+          paymentCollected: parsed.data.payment_collected,
+          confirmedBy: "owner",
+        });
+        return NextResponse.json({ ok: true });
+      }
+
+      if (newStatus === "paid") {
+        const { confirmOrderPayment } = await import("@/lib/payments/confirm-order-payment");
+        await confirmOrderPayment(params.id);
+        return NextResponse.json({ ok: true });
+      }
+
+      const admin = createAdminClient();
+      const { data: order } = await admin
+        .from("orders")
+        .select("delivery_token")
+        .eq("id", params.id)
+        .single();
+
+      const updates = buildOrderStatusUpdate(
+        newStatus,
+        parsed.data.payment_collected,
+        order?.delivery_token
+      );
+
+      const { error: updateError } = await admin
+        .from("orders")
+        .update(updates)
+        .eq("id", params.id);
+
+      if (updateError) throw updateError;
+      return NextResponse.json({ ok: true });
+    }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -40,7 +85,7 @@ export async function PATCH(
     const { data: order, error: orderError } = await supabase
       .schema("zapcomanda")
       .from("orders")
-      .select("id, establishment_id")
+      .select("id, establishment_id, delivery_token")
       .eq("id", params.id)
       .single();
 
@@ -63,10 +108,30 @@ export async function PATCH(
       return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
     }
 
+    if (newStatus === "delivered") {
+      await completeOrderDelivery(params.id, {
+        paymentCollected: parsed.data.payment_collected,
+        confirmedBy: "owner",
+      });
+      return NextResponse.json({ ok: true });
+    }
+
+    if (newStatus === "paid") {
+      const { confirmOrderPayment } = await import("@/lib/payments/confirm-order-payment");
+      await confirmOrderPayment(params.id);
+      return NextResponse.json({ ok: true });
+    }
+
+    const updates = buildOrderStatusUpdate(
+      newStatus,
+      parsed.data.payment_collected,
+      order.delivery_token
+    );
+
     const { error: updateError } = await supabase
       .schema("zapcomanda")
       .from("orders")
-      .update({ status: parsed.data.status as OrderStatus })
+      .update(updates)
       .eq("id", params.id);
 
     if (updateError) throw updateError;

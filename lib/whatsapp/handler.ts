@@ -1,6 +1,15 @@
+import { canUseDailyMenu, canUseOrderCutoff } from "@/lib/plans/features";
+import { formatCartLine, formatOrderTotalLines, lineSubtotal, orderTotal } from "@/lib/orders/cart";
+import { getEstablishmentDeliveryFee } from "@/lib/establishment/delivery-fee";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { cartTotal, formatCartLine, lineSubtotal } from "@/lib/orders/cart";
 import { createOrderPixPayment } from "@/lib/payments/create-pix";
+import {
+  isPayOnDelivery,
+  normalizeAcceptedMethods,
+  PAYMENT_METHOD_LABELS,
+  PAYMENT_METHOD_SHORT,
+  type PaymentMethod,
+} from "@/lib/payments/methods";
 import {
   addonFromId,
   getMenuItemAddons,
@@ -104,7 +113,7 @@ async function getActiveMenu(establishment: Establishment): Promise<MenuItem[]> 
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
 
-  if (establishment.category === "quentinha") {
+  if (establishment.category === "quentinha" && canUseDailyMenu(establishment.plan)) {
     query = query.eq("is_daily", true);
   }
 
@@ -114,6 +123,7 @@ async function getActiveMenu(establishment: Establishment): Promise<MenuItem[]> 
 }
 
 function isWithinCutoff(establishment: Establishment): boolean {
+  if (!canUseOrderCutoff(establishment.plan)) return true;
   if (!establishment.order_cutoff_time) return true;
   const now = new Date();
   const [hours, minutes] = establishment.order_cutoff_time.split(":").map(Number);
@@ -219,14 +229,15 @@ async function sendOrderSummary(
   establishment: Establishment,
   session: WhatsAppSession
 ): Promise<void> {
-  const total = cartTotal(session.cart);
+  const deliveryFee = getEstablishmentDeliveryFee(establishment);
   const summary = formatCartSummary(session.cart);
+  const totals = formatOrderTotalLines(session.cart, deliveryFee, formatCurrency);
 
   await updateSession(session.id, { step: "confirming_order" });
 
   await sendButtons({
     phone: session.phone,
-    title: `📋 *Resumo do pedido:*\n\n${summary}\n\n*Total: ${formatCurrency(total)}*\n\nTudo certo?`,
+    title: `📋 *Resumo do pedido:*\n\n${summary}\n\n${totals}\n\nTudo certo?`,
     buttons: [
       { id: "confirm:yes", label: "✅ Confirmar" },
       { id: "confirm:no", label: "❌ Cancelar" },
@@ -534,6 +545,184 @@ async function handleMoreItems(
   await sendOrderSummary(establishment, session);
 }
 
+async function sendPaymentMethodSelection(
+  establishment: Establishment,
+  session: WhatsAppSession
+): Promise<void> {
+  const methods = normalizeAcceptedMethods(establishment.accepted_payment_methods);
+
+  if (methods.length === 1) {
+    await finalizeOrderWithPayment(establishment, session, methods[0]);
+    return;
+  }
+
+  await updateSession(session.id, { step: "selecting_payment_method" });
+
+  const rows = methods.map((method) => ({
+    id: `payment:${method}`,
+    title: PAYMENT_METHOD_SHORT[method],
+    description: isPayOnDelivery(method) ? "Pagamento na entrega" : "Paga agora via Pix",
+  }));
+
+  await sendList({
+    phone: session.phone,
+    title: "Forma de pagamento",
+    description: "Como você vai pagar?",
+    buttonText: "💳 Escolher pagamento",
+    rows,
+    instanceId: instanceId(establishment),
+  });
+}
+
+function parsePaymentMethod(
+  buttonId: string,
+  text: string,
+  accepted: PaymentMethod[]
+): PaymentMethod | null {
+  const fromButton = buttonId.startsWith("payment:")
+    ? buttonId.replace("payment:", "")
+    : null;
+
+  if (fromButton && accepted.includes(fromButton as PaymentMethod)) {
+    return fromButton as PaymentMethod;
+  }
+
+  const normalized = text.trim().toLowerCase();
+  const byLabel = accepted.find(
+    (m) =>
+      PAYMENT_METHOD_SHORT[m].toLowerCase() === normalized ||
+      PAYMENT_METHOD_LABELS[m].toLowerCase().includes(normalized)
+  );
+
+  return byLabel ?? null;
+}
+
+async function finalizeOrderWithPayment(
+  establishment: Establishment,
+  session: WhatsAppSession,
+  paymentMethod: PaymentMethod
+): Promise<void> {
+  if (session.cart.length === 0) {
+    await sendText({
+      phone: session.phone,
+      message: "Seu pedido está vazio. Digite *oi* para começar de novo.",
+      instanceId: instanceId(establishment),
+    });
+    return;
+  }
+
+  const supabase = createAdminClient();
+  const deliveryFee = getEstablishmentDeliveryFee(establishment);
+  const total = orderTotal(session.cart, deliveryFee);
+  const orderNotes = buildOrderNotes(session.cart);
+  const payOnDelivery = isPayOnDelivery(paymentMethod);
+  const initialStatus = payOnDelivery ? "paid" : "awaiting_payment";
+
+  const { data: customer, error: customerError } = await supabase
+    .from("customers")
+    .upsert(
+      { establishment_id: establishment.id, phone: session.phone },
+      { onConflict: "establishment_id,phone" }
+    )
+    .select("*")
+    .single();
+
+  if (customerError) throw customerError;
+
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .insert({
+      establishment_id: establishment.id,
+      customer_id: customer.id,
+      status: initialStatus,
+      total_amount: total,
+      delivery_fee: deliveryFee,
+      notes: orderNotes,
+      payment_method: paymentMethod,
+      payment_collected: false,
+    })
+    .select("*")
+    .single();
+
+  if (orderError) throw orderError;
+
+  const orderItems = session.cart.map((item) => ({
+    order_id: order.id,
+    menu_item_id: item.menuItemId,
+    item_name: item.name,
+    quantity: item.quantity,
+    unit_price: item.unitPrice,
+    subtotal: lineSubtotal(item),
+    notes: item.notes || null,
+    addons: item.addons || [],
+  }));
+
+  const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
+  if (itemsError) throw itemsError;
+
+  const summary = formatCartSummary(session.cart);
+  const totals = formatOrderTotalLines(session.cart, deliveryFee, formatCurrency);
+  const orderRef = order.id.slice(0, 8);
+
+  if (payOnDelivery) {
+    await updateSession(session.id, {
+      step: "idle",
+      cart: [],
+      pending_order_id: null,
+      metadata: {},
+    });
+
+    await sendText({
+      phone: session.phone,
+      message:
+        `✅ Pedido #${orderRef} confirmado!\n\n` +
+        `${summary}\n\n` +
+        `${totals}\n` +
+        `*Pagamento: ${PAYMENT_METHOD_SHORT[paymentMethod]} na entrega*\n\n` +
+        `Vamos preparar seu pedido. O pagamento é feito quando você receber.`,
+      instanceId: instanceId(establishment),
+    });
+    return;
+  }
+
+  await updateSession(session.id, {
+    step: "awaiting_payment",
+    pending_order_id: order.id,
+    cart: [],
+  });
+
+  let pixMessage =
+    `✅ Pedido #${orderRef} registrado!\n\n` +
+    `${summary}\n\n` +
+    `${totals}\n\n`;
+
+  try {
+    const { pixCopyPaste } = await createOrderPixPayment({
+      orderId: order.id,
+      establishmentId: establishment.id,
+      customerPhone: session.phone,
+      amount: total,
+      establishmentName: establishment.name,
+      orderRef,
+    });
+
+    pixMessage +=
+      `💳 *Pague via Pix (R$ ${total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}):*\n\n` +
+      `\`\`\`${pixCopyPaste}\`\`\`\n\n` +
+      `Copie o código acima e cole no app do seu banco. ` +
+      `Quando o estabelecimento confirmar o pagamento, avisaremos que seu pedido está em preparo.`;
+  } catch (pixError) {
+    console.error("Pix generation error:", pixError);
+    pixMessage += `Não foi possível gerar o Pix agora. Entre em contato com o estabelecimento.`;
+  }
+
+  await sendText({
+    phone: session.phone,
+    message: pixMessage,
+    instanceId: instanceId(establishment),
+  });
+}
+
 async function handleConfirmation(
   establishment: Establishment,
   session: WhatsAppSession,
@@ -558,83 +747,7 @@ async function handleConfirmation(
     return;
   }
 
-  const supabase = createAdminClient();
-  const total = cartTotal(session.cart);
-  const orderNotes = buildOrderNotes(session.cart);
-
-  const { data: customer, error: customerError } = await supabase
-    .from("customers")
-    .upsert(
-      { establishment_id: establishment.id, phone: session.phone },
-      { onConflict: "establishment_id,phone" }
-    )
-    .select("*")
-    .single();
-
-  if (customerError) throw customerError;
-
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .insert({
-      establishment_id: establishment.id,
-      customer_id: customer.id,
-      status: "awaiting_payment",
-      total_amount: total,
-      notes: orderNotes,
-    })
-    .select("*")
-    .single();
-
-  if (orderError) throw orderError;
-
-  const orderItems = session.cart.map((item) => ({
-    order_id: order.id,
-    menu_item_id: item.menuItemId,
-    item_name: item.name,
-    quantity: item.quantity,
-    unit_price: item.unitPrice,
-    subtotal: lineSubtotal(item),
-    notes: item.notes || null,
-    addons: item.addons || [],
-  }));
-
-  const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
-  if (itemsError) throw itemsError;
-
-  await updateSession(session.id, {
-    step: "awaiting_payment",
-    pending_order_id: order.id,
-  });
-
-  let pixMessage =
-    `✅ Pedido #${order.id.slice(0, 8)} registrado!\n\n` +
-    `${formatCartSummary(session.cart)}\n\n` +
-    `*Total: ${formatCurrency(total)}*\n\n`;
-
-  try {
-    const { pixCopyPaste } = await createOrderPixPayment({
-      orderId: order.id,
-      establishmentId: establishment.id,
-      customerPhone: session.phone,
-      amount: total,
-      establishmentName: establishment.name,
-    });
-
-    pixMessage +=
-      `💳 *Pague via Pix:*\n\n` +
-      `\`\`\`${pixCopyPaste}\`\`\`\n\n` +
-      `Copie o código acima e cole no app do seu banco. ` +
-      `Após a confirmação, avisaremos quando seu pedido estiver em preparo.`;
-  } catch (pixError) {
-    console.error("Pix generation error:", pixError);
-    pixMessage += `Não foi possível gerar o Pix agora. Entre em contato com o estabelecimento.`;
-  }
-
-  await sendText({
-    phone: session.phone,
-    message: pixMessage,
-    instanceId: instanceId(establishment),
-  });
+  await sendPaymentMethodSelection(establishment, session);
 }
 
 function isYes(text: string, buttonId: string, id: string): boolean {
@@ -783,6 +896,24 @@ export async function handleIncomingMessage(message: IncomingMessage): Promise<v
   if (session.step === "confirming_order" && isNo(text, buttonId, "confirm:no")) {
     await handleConfirmation(establishment, session, false);
     return;
+  }
+
+  if (session.step === "selecting_payment_method") {
+    const accepted = normalizeAcceptedMethods(establishment.accepted_payment_methods);
+    const method = parsePaymentMethod(buttonId, text, accepted);
+    if (method) {
+      await finalizeOrderWithPayment(establishment, session, method);
+      return;
+    }
+  }
+
+  if (buttonId.startsWith("payment:")) {
+    const method = buttonId.replace("payment:", "") as PaymentMethod;
+    const accepted = normalizeAcceptedMethods(establishment.accepted_payment_methods);
+    if (accepted.includes(method)) {
+      await finalizeOrderWithPayment(establishment, session, method);
+      return;
+    }
   }
 
   await sendText({

@@ -28,6 +28,7 @@ export const onboardingSchema = z.object({
   menu_items: z
     .array(menuItemSchema)
     .min(1, "Adicione pelo menos um item ao cardápio"),
+  plan: z.enum(["basic", "pro"]).default("basic"),
 });
 
 export type OnboardingFormData = z.infer<typeof onboardingSchema>;

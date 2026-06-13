@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendText } from "@/lib/whatsapp/client";
 
 const CONFIRMED_EVENTS = [
   "PAYMENT_CONFIRMED",
@@ -28,6 +27,13 @@ export async function POST(request: NextRequest) {
     const asaasPaymentId = String(payment.id);
     const supabase = createAdminClient();
 
+    const externalReference = payment.externalReference;
+    const { tryActivatePlanFromPayment } = await import("@/lib/plans/activate");
+
+    if (await tryActivatePlanFromPayment(externalReference)) {
+      return NextResponse.json({ ok: true, plan_activated: true });
+    }
+
     const { data: dbPayment, error: paymentError } = await supabase
       .from("payments")
       .update({
@@ -43,29 +49,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, not_found: true });
     }
 
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .update({ status: "paid" })
-      .eq("id", dbPayment.order_id)
-      .select("*, customers(phone), establishments(name, whatsapp_instance_id)")
-      .single();
-
-    if (orderError) throw orderError;
-
-    const customer = order.customers as { phone: string };
-    const establishment = order.establishments as {
-      name: string;
-      whatsapp_instance_id: string | null;
-    };
-
-    await sendText({
-      phone: customer.phone,
-      message:
-        `🎉 Pagamento confirmado!\n\n` +
-        `Seu pedido no *${establishment.name}* foi recebido e já está em preparo. ` +
-        `Obrigado pela preferência!`,
-      instanceId: establishment.whatsapp_instance_id || undefined,
-    });
+    const { confirmOrderPayment } = await import("@/lib/payments/confirm-order-payment");
+    await confirmOrderPayment(dbPayment.order_id);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

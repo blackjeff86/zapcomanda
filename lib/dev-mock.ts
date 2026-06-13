@@ -1,0 +1,296 @@
+import type { Establishment } from "@/types/database";
+import type { OrderRow } from "@/lib/orders/normalize";
+import type { MenuItemWithAddons } from "@/lib/menu/types";
+
+const DEV_ESTABLISHMENT_ID = "00000000-0000-4000-8000-000000000001";
+const now = () => new Date().toISOString();
+
+function minutesAgo(minutes: number): string {
+  return new Date(Date.now() - minutes * 60_000).toISOString();
+}
+
+export function getDevMockEstablishment(): Establishment {
+  const now = new Date().toISOString();
+
+  return {
+    id: DEV_ESTABLISHMENT_ID,
+    user_id: "00000000-0000-4000-8000-000000000099",
+    name: "Quentinha da Dona Maria",
+    whatsapp_number: "5511999887766",
+    category: "quentinha",
+    logo_url: null,
+    primary_color: "#16a34a",
+    plan: "basic",
+    asaas_customer_id: null,
+    asaas_subscription_id: null,
+    whatsapp_instance_id: null,
+    order_cutoff_time: "11:00:00",
+    accepted_payment_methods: ["pix", "cash", "credit_card", "debit_card"],
+    delivery_fee_enabled: true,
+    delivery_fee_amount: 5,
+    pix_key_type: "phone",
+    pix_key: "5511999887766",
+    created_at: now,
+    updated_at: now,
+  };
+}
+
+export function getDevMockOrders(): OrderRow[] {
+  return [
+    {
+      id: "a1000000-0000-4000-8000-000000000001",
+      status: "out_for_delivery",
+      total_amount: 43,
+      created_at: minutesAgo(12),
+      delivery_fee: 5,
+      payment_method: "cash",
+      payment_collected: false,
+      delivered_at: null,
+      delivery_token: "dev-token-carlos-entrega",
+      delivery_photo_url: null,
+      delivery_confirmed_by: null,
+      customers: { phone: "5511988776655", name: "Carlos Silva" },
+      notes: "Entregar no portão azul",
+      order_items: [
+        {
+          item_name: "Quentinha P",
+          quantity: 1,
+          subtotal: 28,
+          notes: "Sem pimenta",
+          addons: [{ id: "1", name: "Ovo", price: 3 }],
+        },
+        {
+          item_name: "Suco de laranja",
+          quantity: 1,
+          subtotal: 7,
+          notes: null,
+          addons: [],
+        },
+      ],
+    },
+    {
+      id: "a1000000-0000-4000-8000-000000000002",
+      status: "paid",
+      total_amount: 52,
+      delivery_fee: 0,
+      created_at: minutesAgo(28),
+      payment_method: "pix",
+      payment_collected: true,
+      delivered_at: null,
+      delivery_token: null,
+      delivery_photo_url: null,
+      delivery_confirmed_by: null,
+      customers: { phone: "5511977665544", name: "Ana Paula" },
+      notes: null,
+      order_items: [
+        {
+          item_name: "Quentinha G",
+          quantity: 2,
+          subtotal: 44,
+          notes: null,
+          addons: [
+            { id: "2", name: "Salada extra", price: 4 },
+            { id: "3", name: "Ovo", price: 3 },
+          ],
+        },
+        {
+          item_name: "Refrigerante lata",
+          quantity: 2,
+          subtotal: 8,
+          notes: null,
+          addons: [],
+        },
+      ],
+    },
+    {
+      id: "a1000000-0000-4000-8000-000000000003",
+      status: "awaiting_payment",
+      total_amount: 24,
+      delivery_fee: 0,
+      created_at: minutesAgo(5),
+      payment_method: "pix",
+      payment_collected: false,
+      delivered_at: null,
+      delivery_token: null,
+      delivery_photo_url: null,
+      delivery_confirmed_by: null,
+      customers: { phone: "5511966554433", name: "João Mendes" },
+      notes: null,
+      order_items: [
+        {
+          item_name: "Quentinha M",
+          quantity: 1,
+          subtotal: 24,
+          notes: "Arroz separado",
+          addons: [],
+        },
+      ],
+    },
+    {
+      id: "a1000000-0000-4000-8000-000000000004",
+      status: "delivered",
+      total_amount: 31,
+      delivery_fee: 0,
+      created_at: minutesAgo(95),
+      payment_method: "credit_card",
+      payment_collected: true,
+      delivered_at: minutesAgo(60),
+      delivery_token: null,
+      delivery_photo_url: null,
+      delivery_confirmed_by: "owner",
+      customers: { phone: "5511955443322", name: "Fernanda" },
+      notes: null,
+      order_items: [
+        {
+          item_name: "Quentinha P",
+          quantity: 1,
+          subtotal: 28,
+          notes: null,
+          addons: [{ id: "4", name: "Farofa", price: 3 }],
+        },
+      ],
+    },
+    {
+      id: "a1000000-0000-4000-8000-000000000005",
+      status: "delivered",
+      total_amount: 18,
+      delivery_fee: 0,
+      created_at: minutesAgo(180),
+      payment_method: "pix",
+      payment_collected: true,
+      delivered_at: minutesAgo(150),
+      delivery_token: null,
+      delivery_photo_url: null,
+      delivery_confirmed_by: "delivery_link",
+      customers: { phone: "5511944332211", name: null },
+      notes: null,
+      order_items: [
+        {
+          item_name: "Marmita fit",
+          quantity: 1,
+          subtotal: 18,
+          notes: "Sem sal",
+          addons: [],
+        },
+      ],
+    },
+  ];
+}
+
+export function isDevMockEstablishmentId(id: string): boolean {
+  return id === DEV_ESTABLISHMENT_ID;
+}
+
+export function getDevMockMenuItems(): MenuItemWithAddons[] {
+  const ts = now();
+
+  return [
+    {
+      id: "b1000000-0000-4000-8000-000000000001",
+      establishment_id: DEV_ESTABLISHMENT_ID,
+      name: "Quentinha P",
+      description: "Arroz, feijão, salada e proteína",
+      price: 28,
+      photo_url: null,
+      category: "Quentinhas",
+      is_active: true,
+      is_daily: true,
+      sort_order: 0,
+      created_at: ts,
+      updated_at: ts,
+      addons: [
+        {
+          id: "c1000000-0000-4000-8000-000000000001",
+          menu_item_id: "b1000000-0000-4000-8000-000000000001",
+          name: "Ovo",
+          price: 3,
+          is_active: true,
+          sort_order: 0,
+          created_at: ts,
+          updated_at: ts,
+        },
+        {
+          id: "c1000000-0000-4000-8000-000000000002",
+          menu_item_id: "b1000000-0000-4000-8000-000000000001",
+          name: "Farofa",
+          price: 3,
+          is_active: true,
+          sort_order: 1,
+          created_at: ts,
+          updated_at: ts,
+        },
+      ],
+    },
+    {
+      id: "b1000000-0000-4000-8000-000000000002",
+      establishment_id: DEV_ESTABLISHMENT_ID,
+      name: "Quentinha M",
+      description: "Porção média — 2 proteínas",
+      price: 24,
+      photo_url: null,
+      category: "Quentinhas",
+      is_active: true,
+      is_daily: true,
+      sort_order: 1,
+      created_at: ts,
+      updated_at: ts,
+      addons: [],
+    },
+    {
+      id: "b1000000-0000-4000-8000-000000000003",
+      establishment_id: DEV_ESTABLISHMENT_ID,
+      name: "Quentinha G",
+      description: "Porção grande — ideal para família",
+      price: 32,
+      photo_url: null,
+      category: "Quentinhas",
+      is_active: true,
+      is_daily: true,
+      sort_order: 2,
+      created_at: ts,
+      updated_at: ts,
+      addons: [
+        {
+          id: "c1000000-0000-4000-8000-000000000003",
+          menu_item_id: "b1000000-0000-4000-8000-000000000002",
+          name: "Salada extra",
+          price: 4,
+          is_active: true,
+          sort_order: 0,
+          created_at: ts,
+          updated_at: ts,
+        },
+      ],
+    },
+    {
+      id: "b1000000-0000-4000-8000-000000000004",
+      establishment_id: DEV_ESTABLISHMENT_ID,
+      name: "Suco de laranja",
+      description: "Natural 300ml",
+      price: 7,
+      photo_url: null,
+      category: "Bebidas",
+      is_active: true,
+      is_daily: false,
+      sort_order: 3,
+      created_at: ts,
+      updated_at: ts,
+      addons: [],
+    },
+    {
+      id: "b1000000-0000-4000-8000-000000000005",
+      establishment_id: DEV_ESTABLISHMENT_ID,
+      name: "Marmita fit",
+      description: "Opção low carb",
+      price: 18,
+      photo_url: null,
+      category: "Especiais",
+      is_active: false,
+      is_daily: false,
+      sort_order: 4,
+      created_at: ts,
+      updated_at: ts,
+      addons: [],
+    },
+  ];
+}

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import Logo from "@/components/brand/Logo";
+import { getLoginHref } from "@/lib/dev-auth";
 
 export default function Footer() {
+  const loginHref = getLoginHref();
+
   return (
     <footer className="border-t border-gray-100 bg-white py-12">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -13,7 +16,7 @@ export default function Footer() {
           </p>
 
           <div className="flex gap-6 text-sm text-gray-500">
-            <Link href="/login" className="transition hover:text-gray-900">
+            <Link href={loginHref} className="transition hover:text-gray-900">
               Entrar
             </Link>
             <Link href="/signup" className="transition hover:text-gray-900">

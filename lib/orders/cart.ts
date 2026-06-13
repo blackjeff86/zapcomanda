@@ -12,6 +12,26 @@ export function cartTotal(cart: CartItem[]): number {
   return cart.reduce((sum, item) => sum + lineSubtotal(item), 0);
 }
 
+export function orderTotal(cart: CartItem[], deliveryFee = 0): number {
+  return cartTotal(cart) + deliveryFee;
+}
+
+export function formatOrderTotalLines(
+  cart: CartItem[],
+  deliveryFee: number,
+  formatCurrency: (v: number) => string
+): string {
+  const itemsTotal = cartTotal(cart);
+  const lines = [`Subtotal: ${formatCurrency(itemsTotal)}`];
+
+  if (deliveryFee > 0) {
+    lines.push(`Entrega: ${formatCurrency(deliveryFee)}`);
+  }
+
+  lines.push(`*Total: ${formatCurrency(orderTotal(cart, deliveryFee))}*`);
+  return lines.join("\n");
+}
+
 export function formatCartLine(item: CartItem, formatCurrency: (v: number) => string): string {
   let line = `• ${item.quantity}x ${item.name} — ${formatCurrency(lineSubtotal(item))}`;
 

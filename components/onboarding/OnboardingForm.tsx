@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { PLANS } from "@/lib/plans/config";
 import type { OnboardingFormData } from "@/lib/validations/onboarding";
+import type { PlanType } from "@/types/database";
 
-const STEPS = ["Negócio", "Visual", "Cardápio"] as const;
+const STEPS = ["Negócio", "Plano", "Visual", "Cardápio"] as const;
+
+function formatCurrency(value: number) {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
 
 const DEFAULT_MENU_ITEM = {
   name: "",
@@ -27,8 +33,16 @@ export default function OnboardingForm() {
     category: "lanchonete",
     primary_color: "#16a34a",
     logo_url: "",
+    plan: "basic",
     menu_items: [{ ...DEFAULT_MENU_ITEM }],
   });
+
+  const [pixCheckout, setPixCheckout] = useState<{
+    pix_copy_paste: string;
+    amount: number;
+    invoice_url: string | null;
+    establishmentId: string;
+  } | null>(null);
 
   function updateField<K extends keyof OnboardingFormData>(
     key: K,
@@ -118,12 +132,74 @@ export default function OnboardingForm() {
         throw new Error(data.error || "Erro ao criar estabelecimento");
       }
 
+      if (data.needs_plan_payment) {
+        const upgradeRes = await fetch("/api/plans/upgrade", { method: "POST" });
+        const upgradeData = await upgradeRes.json();
+        if (!upgradeRes.ok) {
+          throw new Error(upgradeData.error || "Erro ao gerar pagamento do Pro");
+        }
+        if (upgradeData.dev_mock) {
+          router.push(`/dashboard?established=${data.id}`);
+          return;
+        }
+        setPixCheckout({
+          pix_copy_paste: upgradeData.pix_copy_paste,
+          amount: upgradeData.amount,
+          invoice_url: upgradeData.invoice_url ?? null,
+          establishmentId: data.id,
+        });
+        return;
+      }
+
       router.push(`/dashboard?established=${data.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (pixCheckout) {
+    return (
+      <div className="mx-auto max-w-2xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 className="text-xl font-bold text-gray-900">Último passo: ativar o Pro</h2>
+        <p className="mt-2 text-sm text-gray-600">
+          Pague a primeira mensalidade ({formatCurrency(pixCheckout.amount)}) via Pix. O plano
+          Pro é liberado automaticamente após a confirmação.
+        </p>
+        <code className="mt-4 block break-all rounded-lg bg-gray-100 px-3 py-3 text-xs text-gray-800">
+          {pixCheckout.pix_copy_paste}
+        </code>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => navigator.clipboard.writeText(pixCheckout.pix_copy_paste)}
+            className="min-h-[44px] rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700"
+          >
+            Copiar código Pix
+          </button>
+          {pixCheckout.invoice_url && (
+            <a
+              href={pixCheckout.invoice_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="min-h-[44px] rounded-lg border border-gray-300 px-4 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Abrir fatura
+            </a>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() =>
+            router.push(`/dashboard?established=${pixCheckout.establishmentId}`)
+          }
+          className="mt-6 text-sm font-medium text-gray-500 hover:text-gray-800"
+        >
+          Já paguei ou continuar no Básico por agora →
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -219,7 +295,7 @@ export default function OnboardingForm() {
                   <p className="mt-1 text-xs text-gray-500">
                     {cat === "lanchonete"
                       ? "Cardápio fixo com categorias"
-                      : "Cardápio do dia (Plano Pro)"}
+                      : "Ideal com plano Pro (cardápio do dia + corte)"}
                   </p>
                 </button>
               ))}
@@ -229,6 +305,59 @@ export default function OnboardingForm() {
       )}
 
       {step === 1 && (
+        <div className="space-y-5">
+          <h2 className="text-xl font-semibold text-gray-900">Escolha seu plano</h2>
+          <p className="text-sm text-gray-600">
+            Sem fidelidade. Você pode mudar depois no painel.
+          </p>
+
+          {form.category === "quentinha" && form.plan === "basic" && (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              Para quentinha/marmita, o plano <strong>Pro</strong> libera cardápio do dia e horário
+              de corte no WhatsApp.
+            </p>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(["basic", "pro"] as PlanType[]).map((planId) => {
+              const plan = PLANS[planId];
+              const selected = form.plan === planId;
+              return (
+                <button
+                  key={planId}
+                  type="button"
+                  onClick={() => updateField("plan", planId)}
+                  className={`rounded-xl border-2 p-4 text-left transition ${
+                    selected
+                      ? "border-green-600 bg-green-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-gray-900">{plan.name}</span>
+                    {plan.badge && (
+                      <span className="rounded-full bg-green-600 px-2 py-0.5 text-xs font-bold text-white">
+                        {plan.badge}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-2xl font-bold text-gray-900">
+                    {formatCurrency(plan.price)}
+                    <span className="text-sm font-normal text-gray-500">/mês</span>
+                  </p>
+                  <ul className="mt-3 space-y-1 text-xs text-gray-600">
+                    {plan.features.slice(0, 4).map((f) => (
+                      <li key={f}>✓ {f}</li>
+                    ))}
+                  </ul>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {step === 2 && (
         <div className="space-y-5">
           <h2 className="text-xl font-semibold text-gray-900">
             Identidade visual
@@ -294,7 +423,7 @@ export default function OnboardingForm() {
         </div>
       )}
 
-      {step === 2 && (
+      {step === 3 && (
         <div className="space-y-5">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900">Cardápio</h2>

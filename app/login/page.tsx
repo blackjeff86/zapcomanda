@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AuthForm from "@/components/auth/AuthForm";
 import Logo from "@/components/brand/Logo";
+import { isAuthBypassed } from "@/lib/dev-auth";
 
 export const metadata = {
   title: "Entrar — ZapComanda",
@@ -11,6 +12,8 @@ export default function LoginPage({
 }: {
   searchParams: { error?: string; next?: string };
 }) {
+  const devBypass = isAuthBypassed();
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
@@ -27,7 +30,11 @@ export default function LoginPage({
           </div>
         )}
 
-        <AuthForm mode="login" redirectTo={searchParams.next} />
+        <AuthForm
+          mode="login"
+          redirectTo={searchParams.next}
+          devBypass={devBypass}
+        />
       </div>
     </main>
   );
