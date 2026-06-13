@@ -502,9 +502,7 @@ export default function CardapioClient({
                     className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-gray-900">
-                        {item.quantity}× {item.name}
-                      </p>
+                      <p className="text-sm font-semibold text-gray-900">{item.name}</p>
                       {item.selectedAddons.length > 0 && (
                         <p className="mt-0.5 text-xs text-gray-500">
                           + {item.selectedAddons.map((a) => a.name).join(", ")}
@@ -516,17 +514,47 @@ export default function CardapioClient({
                         </p>
                       )}
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="text-sm font-semibold text-gray-900">
+                    <div className="flex shrink-0 items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCart((prev) =>
+                              item.quantity === 1
+                                ? prev.filter((c) => c.id !== item.id)
+                                : prev.map((c) =>
+                                    c.id === item.id
+                                      ? { ...c, quantity: c.quantity - 1 }
+                                      : c
+                                  )
+                            )
+                          }
+                          className="flex h-7 w-7 items-center justify-center rounded-full border-2 text-base font-bold leading-none"
+                          style={{ borderColor: brand, color: brand }}
+                        >
+                          −
+                        </button>
+                        <span className="w-4 text-center text-sm font-bold">
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCart((prev) =>
+                              prev.map((c) =>
+                                c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c
+                              )
+                            )
+                          }
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-base font-bold leading-none text-white"
+                          style={{ backgroundColor: brand }}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <span className="w-16 text-right text-sm font-semibold text-gray-900">
                         {fmt(item.unitPrice * item.quantity)}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => removeCartItem(item.id)}
-                        className="text-lg leading-none text-gray-400 hover:text-red-500"
-                      >
-                        ✕
-                      </button>
                     </div>
                   </div>
                 ))}
