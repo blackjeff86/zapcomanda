@@ -176,10 +176,6 @@ export default function CardapioClient({
     closeModal();
   }
 
-  function removeCartItem(id: string) {
-    setCart((prev) => prev.filter((c) => c.id !== id));
-  }
-
   async function handleSubmit() {
     if (!checkout.name.trim() || !checkout.phone.trim()) {
       setOrderError("Preencha seu nome e WhatsApp.");
