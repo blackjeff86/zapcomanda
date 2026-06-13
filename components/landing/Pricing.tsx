@@ -4,11 +4,11 @@ const plans = [
   {
     name: "Básico",
     price: "49",
-    description: "Perfeito pra lanchonete e sanduíches — organize o WhatsApp sem complicação.",
+    description: "Para lanchonetes, esfihas e sanduíches — comece a receber pedidos online hoje.",
     features: [
-      "Cardápio ilimitado",
-      "1 número de WhatsApp",
-      "Bot de pedidos automático",
+      "Cardápio digital ilimitado",
+      "Link próprio do restaurante",
+      "Pedidos online pelo celular",
       "Pix automático",
       "Painel de pedidos em tempo real",
       "Histórico e faturamento do dia",
@@ -19,13 +19,12 @@ const plans = [
   {
     name: "Pro",
     price: "79",
-    description: "Pra marmita, quentinha ou doces com cardápio do dia e mais controle.",
+    description: "Para marmitaria, quentinha ou doces — com controle de cardápio e ferramentas de crescimento.",
     features: [
       "Tudo do plano Básico",
-      "2 números de WhatsApp",
       "Cardápio do dia",
       "Horário de corte de pedidos",
-      "Broadcast para clientes",
+      "Cupons de desconto",
       "Relatório semanal",
     ],
     cta: "Começar com o Pro",
@@ -46,7 +45,7 @@ export default function Pricing() {
             Menos que o custo de 2 pedidos errados por semana
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            Cobra via boleto, Pix ou cartão. Sem fidelidade, sem taxa por pedido.
+            Sem taxa por pedido. Sem fidelidade. Cancele quando quiser.
           </p>
         </div>
 

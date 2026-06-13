@@ -1,7 +1,7 @@
 const testimonials = [
   {
     quote:
-      "Antes eu perdia pedido no meio do zap. Agora o cliente manda oi, escolhe e paga. Eu só olho o painel e preparo.",
+      "Antes eu perdia pedido no telefone e no papel. Agora o cliente acessa o link, escolhe e paga. Eu só olho o painel e preparo.",
     name: "Cida",
     business: "Marmitaria da Cida — São Paulo",
     initials: "MC",

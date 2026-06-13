@@ -14,10 +14,10 @@ export default function CTA() {
           </div>
 
           <h2 className="relative text-3xl font-bold text-white sm:text-4xl">
-            Seu próximo pedido não precisa se perder no WhatsApp
+            Seu cardápio online pronto em 10 minutos
           </h2>
           <p className="relative mx-auto mt-4 max-w-xl text-lg text-white/80">
-            Configure em 10 minutos. Receba o primeiro pedido automático ainda hoje.
+            Configure, compartilhe o link e receba o primeiro pedido ainda hoje.
           </p>
 
           <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

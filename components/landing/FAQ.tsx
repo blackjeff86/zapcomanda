@@ -1,13 +1,13 @@
 const faqs = [
   {
-    question: "Preciso trocar o número do WhatsApp?",
-    answer:
-      "Não. Você usa o mesmo número que já atende seus clientes. Só conectamos ele ao bot — o cliente continua mandando mensagem como sempre.",
-  },
-  {
     question: "Meu cliente precisa instalar algum app?",
     answer:
-      "Não. Ele manda mensagem no WhatsApp, escolhe o pedido e paga o Pix. Simples assim — igual já faz hoje, só que organizado.",
+      "Não. Ele acessa o link pelo celular, escolhe pelo cardápio e paga o Pix. Funciona direto no navegador — sem baixar nada.",
+  },
+  {
+    question: "Como o cliente faz o pedido?",
+    answer:
+      "Você compartilha o link do seu cardápio (WhatsApp, Instagram, ou onde quiser). O cliente abre, navega pelos itens e finaliza com Pix — tudo em 2 minutos.",
   },
   {
     question: "Funciona pra marmita ou doces com cardápio que muda todo dia?",
@@ -17,7 +17,7 @@ const faqs = [
   {
     question: "Quanto tempo leva pra configurar?",
     answer:
-      "Cerca de 10 minutos. Cadastra o negócio, monta o cardápio e conecta o WhatsApp. No mesmo dia você já pode receber pedido automático.",
+      "Cerca de 10 minutos. Cadastra o negócio, monta o cardápio e compartilha o link. No mesmo dia você já pode receber o primeiro pedido.",
   },
   {
     question: "Tem taxa por pedido?",

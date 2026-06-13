@@ -1,9 +1,9 @@
 const pains = [
   {
     emoji: "😵‍💫",
-    title: "Mensagem perdida no meio do zap",
+    title: "Pedido perdido, cliente sem resposta",
     description:
-      "Cliente pediu às 11h, você viu às 13h. Pedido sumiu entre áudio, figurinha e grupo da família.",
+      "Cliente pediu às 11h, você viu às 13h. Pedido sumiu entre mensagem, ligação e anotação em papel.",
   },
   {
     emoji: "🧾",
@@ -28,9 +28,9 @@ export default function PainSection() {
             Você conhece essa rotina
           </p>
           <h2 className="mt-3 text-3xl font-bold text-white sm:text-4xl">
-            O WhatsApp funciona pra vender.
+            Receber pedido na mão funciona.
             <br />
-            <span className="text-gray-400">Mas não foi feito pra organizar.</span>
+            <span className="text-gray-400">Mas não foi feito pra crescer.</span>
           </h2>
         </div>
 
@@ -51,7 +51,7 @@ export default function PainSection() {
 
         <p className="mt-12 text-center text-lg text-gray-300">
           O ZapComanda resolve isso{" "}
-          <span className="font-semibold text-white">sem mudar a forma que seu cliente já pede.</span>
+          <span className="font-semibold text-white">sem complicar a vida do seu cliente.</span>
         </p>
       </div>
     </section>

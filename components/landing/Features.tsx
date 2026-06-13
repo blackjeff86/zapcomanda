@@ -1,12 +1,12 @@
 const features = [
   {
-    title: "Bot com cardápio interativo",
+    title: "Cardápio digital com link próprio",
     description:
-      "Categorias, itens, quantidade e confirmação — tudo por botões e respostas simples. Funciona até pra quem tem dificuldade com tecnologia.",
-    tag: "WhatsApp",
+      "O cliente abre o link no celular, navega pelas categorias e faz o pedido — sem app, sem instalação. Funciona em qualquer smartphone.",
+    tag: "Cardápio",
   },
   {
-    title: "Pix automático via Asaas",
+    title: "Pix automático",
     description:
       "Gera cobrança Pix na hora e confirma o pagamento sozinho. Acabou a dúvida \"pagou ou não pagou?\".",
     tag: "Pagamento",
@@ -20,21 +20,21 @@ const features = [
   {
     title: "Cardápio do dia",
     description:
-      "Ideal pra marmita e confeitaria: define o que está pronto hoje e pronto. Cliente só vê o que tem — sem confusão com item que acabou.",
+      "Ideal pra marmita e confeitaria: define o que está pronto hoje e pronto. O cliente só vê o que tem — sem confusão com item esgotado.",
     tag: "Cardápio do dia",
     pro: true,
   },
   {
     title: "Horário de corte",
     description:
-      "Pedidos aceitos só até o horário que você definir. Depois do corte? O bot avisa que encerrou e você não precisa recusar um por um.",
+      "Pedidos aceitos só até o horário que você definir. Depois do corte, o cardápio encerra automaticamente — sem precisar recusar um por um.",
     tag: "Operação",
     pro: true,
   },
   {
-    title: "Broadcast para clientes",
+    title: "Cupons de desconto",
     description:
-      "Manda o cardápio do dia ou promoção pra quem já pediu antes. Reativa cliente sem precisar postar em grupo.",
+      "Crie cupons para promoções e fidelização. O cliente aplica na hora do pedido e você controla tudo pelo painel.",
     tag: "Marketing",
     pro: true,
   },
