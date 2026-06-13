@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface ImageUploadProps {
@@ -22,6 +22,11 @@ export default function ImageUpload({
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [value]);
   const inputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
@@ -61,13 +66,14 @@ export default function ImageUpload({
       )}
 
       <div className="flex items-start gap-4">
-        {value ? (
+        {value && !imgError ? (
           <img
             src={value}
             alt="Preview"
             className={`shrink-0 rounded-xl border border-gray-200 object-cover ${
               aspectSquare ? "h-20 w-20" : "h-20 w-32"
             }`}
+            onError={() => setImgError(true)}
           />
         ) : (
           <div

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import PlanSettingsCollapsible from "@/components/dashboard/PlanSettingsCollapsible";
 import ProFeatureUpsell from "@/components/dashboard/ProFeatureUpsell";
@@ -47,6 +47,12 @@ export default function SettingsForm({
     pix_key_type: establishment.pix_key_type ?? "",
     pix_key: establishment.pix_key ?? "",
   });
+  useEffect(() => {
+    if (establishment.logo_url) {
+      setForm((f) => ({ ...f, logo_url: establishment.logo_url ?? "" }));
+    }
+  }, [establishment.logo_url]);
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
