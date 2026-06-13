@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getDevEstablishment, isAuthBypassed } from "@/lib/dev-auth";
 import { getDevMockEstablishment } from "@/lib/dev-mock";
 import { createClient } from "@/lib/supabase/server";
+import { isInternalAdminEmail } from "@/lib/admin/auth";
 import type { Establishment, MemberRole } from "@/types/database";
 
 export interface DashboardContext {
@@ -32,6 +33,8 @@ export async function getDashboardContext(): Promise<DashboardContext> {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  if (isInternalAdminEmail(user.email)) redirect("/admin/clientes");
 
   // Check if this user owns an establishment
   const { data: owned } = await supabase
