@@ -20,6 +20,7 @@ type MenuItem = {
 
 type Establishment = {
   id: string;
+  slug: string;
   name: string;
   category: string;
   logo_url: string | null;
@@ -1042,6 +1043,22 @@ export default function CardapioClient({
                       <span>Total</span>
                       <span>{fmt(orderResult.total)}</span>
                     </div>
+                  </div>
+
+                  {/* Tracking link */}
+                  <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-center">
+                    <p className="mb-2 text-xs text-gray-500">
+                      Salve o link para acompanhar seu pedido:
+                    </p>
+                    <a
+                      href={`/cardapio/${establishment.slug}/pedido/${orderResult.order_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="break-all text-xs font-medium underline"
+                      style={{ color: brand }}
+                    >
+                      {typeof window !== "undefined" ? window.location.origin : ""}/cardapio/{establishment.slug}/pedido/{orderResult.order_id}
+                    </a>
                   </div>
 
                   <button
