@@ -134,6 +134,8 @@ export async function POST(request: NextRequest) {
       ),
       combo_partner_id: parsed.data.combo_partner_id ?? null,
       combo_price: parsed.data.combo_price ?? null,
+      stock_quantity: parsed.data.stock_quantity ?? null,
+      low_stock_threshold: parsed.data.low_stock_threshold ?? null,
       sort_order: 99,
     };
 

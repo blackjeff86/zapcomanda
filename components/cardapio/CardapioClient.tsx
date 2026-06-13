@@ -26,6 +26,8 @@ type MenuItem = {
   category: string;
   combo_partner_id: string | null;
   combo_price: number | null;
+  stock_quantity: number | null;
+  low_stock_threshold: number | null;
   sort_order: number;
   menu_item_addons: Addon[];
 };
@@ -120,8 +122,11 @@ export default function CardapioClient({
 
   const searchableMenuItems = useMemo(() => {
     const q = searchQuery.trim();
-    if (!q) return menuItems;
-    return menuItems.filter((item) =>
+    const available = menuItems.filter(
+      (item) => item.stock_quantity === null || item.stock_quantity > 0
+    );
+    if (!q) return available;
+    return available.filter((item) =>
       matchesSearchAny(q, [
         item.name,
         item.description ?? "",
@@ -588,6 +593,14 @@ export default function CardapioClient({
                           {item.combo_partner_id && (
                             <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
                               Combo
+                            </span>
+                          )}
+                          {item.stock_quantity !== null &&
+                            item.low_stock_threshold !== null &&
+                            item.stock_quantity <= item.low_stock_threshold &&
+                            item.stock_quantity > 0 && (
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                              Acabando
                             </span>
                           )}
                         </div>

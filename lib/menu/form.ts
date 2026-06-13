@@ -10,6 +10,8 @@ export type MenuItemFormState = {
   is_combo: boolean;
   combo_partner_id: string;
   combo_price: string;
+  stock_quantity: string;
+  low_stock_threshold: string;
   addons: Array<{ name: string; price: string }>;
 };
 
@@ -23,6 +25,8 @@ export const EMPTY_MENU_ITEM_FORM: MenuItemFormState = {
   is_combo: false,
   combo_partner_id: "",
   combo_price: "",
+  stock_quantity: "",
+  low_stock_threshold: "3",
   addons: [],
 };
 
@@ -37,6 +41,8 @@ export function menuItemToFormState(item: MenuItemWithAddons): MenuItemFormState
     is_combo: item.combo_partner_id !== null,
     combo_partner_id: item.combo_partner_id ?? "",
     combo_price: item.combo_price != null ? String(item.combo_price) : "",
+    stock_quantity: item.stock_quantity != null ? String(item.stock_quantity) : "",
+    low_stock_threshold: item.low_stock_threshold != null ? String(item.low_stock_threshold) : "3",
     addons: item.addons.map((a) => ({
       name: a.name,
       price: String(a.price),
@@ -55,6 +61,8 @@ export function formStateToPayload(form: MenuItemFormState) {
     is_daily: form.is_daily,
     combo_partner_id: comboEnabled ? form.combo_partner_id : null,
     combo_price: comboEnabled && form.combo_price ? Number(form.combo_price) : null,
+    stock_quantity: form.stock_quantity !== "" ? parseInt(form.stock_quantity, 10) : null,
+    low_stock_threshold: form.low_stock_threshold !== "" ? parseInt(form.low_stock_threshold, 10) : null,
     addons: form.addons
       .filter((a) => a.name.trim())
       .map((a) => ({ name: a.name.trim(), price: Number(a.price) || 0 })),
@@ -79,6 +87,8 @@ export function mergeDevMockItem(
     combo_partner_id: payload.combo_partner_id ?? null,
     combo_price: payload.combo_price ?? null,
     is_combo: payload.combo_partner_id != null,
+    stock_quantity: payload.stock_quantity ?? item.stock_quantity,
+    low_stock_threshold: payload.low_stock_threshold ?? item.low_stock_threshold,
     updated_at: ts,
     addons: payload.addons.map((addon, index) => ({
       id: item.addons[index]?.id ?? `mock-addon-${item.id}-${index}`,

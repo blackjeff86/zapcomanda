@@ -112,6 +112,8 @@ export interface MenuItem {
   is_combo: boolean;
   combo_partner_id: string | null;
   combo_price: number | null;
+  stock_quantity: number | null;
+  low_stock_threshold: number | null;
   sort_order: number;
   created_at: string;
   updated_at: string;

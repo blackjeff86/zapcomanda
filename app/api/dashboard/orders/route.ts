@@ -17,11 +17,16 @@ const posOrderSchema = z.object({
         quantity: z.number().int().positive(),
         unit_price: z.number().positive(),
         notes: z.string().optional(),
+        addons: z
+          .array(z.object({ id: z.string(), name: z.string(), price: z.number() }))
+          .optional(),
       })
     )
     .min(1, "Adicione pelo menos um item"),
   payment_method: z.enum(["pix", "credit_card", "debit_card", "cash", "meal_voucher"]),
   cash_tender_amount: z.number().optional(),
+  delivery_type: z.enum(["local", "pickup", "delivery"]).default("local"),
+  address: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -44,8 +49,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { items, payment_method, customer_name, customer_phone, cash_tender_amount, notes } =
+  const { items, payment_method, customer_name, customer_phone, cash_tender_amount, delivery_type, address } =
     parsed.data;
+
+  const orderTypePrefix =
+    delivery_type === "local" ? "[Consumo no local]"
+    : delivery_type === "pickup" ? "[Retirada]"
+    : address ? `[Delivery] ${address}`
+    : "[Delivery]";
+
+  const notes = parsed.data.notes
+    ? `${orderTypePrefix} ${parsed.data.notes}`
+    : orderTypePrefix;
 
   const total_amount = items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0);
   const change_amount =
@@ -106,9 +121,27 @@ export async function POST(request: NextRequest) {
           unit_price: item.unit_price,
           subtotal: item.unit_price * item.quantity,
           notes: item.notes ?? null,
-          addons: [],
+          addons: item.addons ?? [],
         }))
       );
+
+      const itemIds = items.map((i) => i.menu_item_id);
+      const { data: stockRows } = await admin
+        .from("menu_items")
+        .select("id, stock_quantity")
+        .in("id", itemIds)
+        .not("stock_quantity", "is", null);
+      if (stockRows?.length) {
+        const qtyMap: Record<string, number> = {};
+        for (const item of items) qtyMap[item.menu_item_id] = (qtyMap[item.menu_item_id] ?? 0) + item.quantity;
+        await Promise.all(
+          (stockRows as { id: string; stock_quantity: number }[]).map((si) =>
+            admin.from("menu_items")
+              .update({ stock_quantity: Math.max(0, si.stock_quantity - (qtyMap[si.id] ?? 0)) })
+              .eq("id", si.id)
+          )
+        );
+      }
 
       return NextResponse.json(
         { order_id: order.id, order_ref: order.id.slice(0, 8).toUpperCase(), total: total_amount },
@@ -146,9 +179,28 @@ export async function POST(request: NextRequest) {
         unit_price: item.unit_price,
         subtotal: item.unit_price * item.quantity,
         notes: item.notes ?? null,
-        addons: [],
+        addons: item.addons ?? [],
       }))
     );
+
+    const itemIds = items.map((i) => i.menu_item_id);
+    const { data: stockRows } = await supabase
+      .schema("zapcomanda")
+      .from("menu_items")
+      .select("id, stock_quantity")
+      .in("id", itemIds)
+      .not("stock_quantity", "is", null);
+    if (stockRows?.length) {
+      const qtyMap: Record<string, number> = {};
+      for (const item of items) qtyMap[item.menu_item_id] = (qtyMap[item.menu_item_id] ?? 0) + item.quantity;
+      await Promise.all(
+        (stockRows as { id: string; stock_quantity: number }[]).map((si) =>
+          supabase.schema("zapcomanda").from("menu_items")
+            .update({ stock_quantity: Math.max(0, si.stock_quantity - (qtyMap[si.id] ?? 0)) })
+            .eq("id", si.id)
+        )
+      );
+    }
 
     return NextResponse.json(
       { order_id: order.id, order_ref: order.id.slice(0, 8).toUpperCase(), total: total_amount },

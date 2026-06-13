@@ -23,6 +23,8 @@ export function normalizeMenuItemRow(
     combo_partner_id: (raw.combo_partner_id as string | null) ?? null,
     combo_price: raw.combo_price != null ? Number(raw.combo_price) : null,
     is_combo: raw.combo_partner_id != null,
+    stock_quantity: raw.stock_quantity != null ? Number(raw.stock_quantity) : null,
+    low_stock_threshold: raw.low_stock_threshold != null ? Number(raw.low_stock_threshold) : null,
     sort_order: Number(raw.sort_order),
     created_at: String(raw.created_at),
     updated_at: String(raw.updated_at),

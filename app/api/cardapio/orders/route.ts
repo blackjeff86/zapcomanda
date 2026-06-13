@@ -189,6 +189,24 @@ export async function POST(request: NextRequest) {
 
     if (itemsError) throw itemsError;
 
+    const { data: stockRows } = await admin
+      .schema("zapcomanda")
+      .from("menu_items")
+      .select("id, stock_quantity")
+      .in("id", items.map((i) => i.menu_item_id))
+      .not("stock_quantity", "is", null);
+    if (stockRows?.length) {
+      const qtyMap: Record<string, number> = {};
+      for (const item of items) qtyMap[item.menu_item_id] = (qtyMap[item.menu_item_id] ?? 0) + item.quantity;
+      await Promise.all(
+        (stockRows as { id: string; stock_quantity: number }[]).map((si) =>
+          admin.schema("zapcomanda").from("menu_items")
+            .update({ stock_quantity: Math.max(0, si.stock_quantity - (qtyMap[si.id] ?? 0)) })
+            .eq("id", si.id)
+        )
+      );
+    }
+
     let pixCopyPaste: string | null = null;
 
     if (payment_method === "pix") {

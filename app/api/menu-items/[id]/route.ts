@@ -50,6 +50,8 @@ export async function PATCH(
     if (parsed.data.is_active !== undefined) updates.is_active = parsed.data.is_active;
     if ("combo_partner_id" in parsed.data) updates.combo_partner_id = parsed.data.combo_partner_id ?? null;
     if ("combo_price" in parsed.data) updates.combo_price = parsed.data.combo_price ?? null;
+    if ("stock_quantity" in parsed.data) updates.stock_quantity = parsed.data.stock_quantity ?? null;
+    if ("low_stock_threshold" in parsed.data) updates.low_stock_threshold = parsed.data.low_stock_threshold ?? null;
     if (parsed.data.is_daily !== undefined) {
       if (
         parsed.data.is_daily &&

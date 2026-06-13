@@ -250,6 +250,43 @@ export default function MenuItemForm({
         </div>
       </div>
 
+      <div className="mt-4 sm:col-span-2">
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+          <p className="text-sm font-semibold text-gray-900">Controle de estoque</p>
+          <p className="mt-0.5 text-xs text-gray-500">Deixe em branco para estoque ilimitado.</p>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-700">
+                Quantidade em estoque
+              </label>
+              <input
+                type="number"
+                min={0}
+                step={1}
+                placeholder="Ilimitado"
+                value={form.stock_quantity}
+                onChange={(e) => updateField("stock_quantity", e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-700">
+                Alerta &quot;Acabando&quot; quando restarem
+              </label>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                placeholder="3"
+                value={form.low_stock_threshold}
+                onChange={(e) => updateField("low_stock_threshold", e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="mt-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-gray-700">Adicionais</p>
