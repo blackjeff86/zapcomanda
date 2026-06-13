@@ -31,6 +31,7 @@ export const establishmentSettingsSchema = z
   accepted_payment_methods: acceptedPaymentMethodsSchema.optional(),
   delivery_fee_enabled: z.boolean().optional(),
   delivery_fee_amount: z.coerce.number().min(0, "Valor inválido").optional(),
+  delivery_radius_km: z.coerce.number().int().min(0).max(500).optional().nullable(),
   pix_key_type: z.enum(["cpf", "cnpj", "email", "phone", "random"]).optional().nullable(),
   pix_key: z.string().optional().or(z.literal("")),
 })

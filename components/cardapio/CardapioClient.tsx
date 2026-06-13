@@ -45,6 +45,7 @@ type Establishment = {
   accepted_payment_methods: PaymentMethod[];
   delivery_fee_enabled: boolean;
   delivery_fee_amount: number;
+  delivery_radius_km: number | null;
   pix_key: string | null;
   order_cutoff_time: string | null;
 };
@@ -65,7 +66,10 @@ type CheckoutForm = {
   name: string;
   phone: string;
   deliveryType: "pickup" | "delivery";
-  address: string;
+  street: string;
+  street_number: string;
+  neighborhood: string;
+  cep: string;
   paymentMethod: PaymentMethod;
 };
 
@@ -153,7 +157,10 @@ export default function CardapioClient({
     name: "",
     phone: "",
     deliveryType: "delivery",
-    address: "",
+    street: "",
+    street_number: "",
+    neighborhood: "",
+    cep: "",
     paymentMethod: establishment.accepted_payment_methods[0] ?? "cash",
   });
   const [processing, setProcessing] = useState(false);
@@ -396,9 +403,11 @@ export default function CardapioClient({
       setOrderError("Preencha seu nome e WhatsApp.");
       return;
     }
-    if (checkout.deliveryType === "delivery" && !checkout.address.trim()) {
-      setOrderError("Informe o endereço de entrega.");
-      return;
+    if (checkout.deliveryType === "delivery") {
+      if (!checkout.street.trim() || !checkout.street_number.trim() || !checkout.neighborhood.trim() || !checkout.cep.trim()) {
+        setOrderError("Preencha todos os campos do endereço de entrega.");
+        return;
+      }
     }
 
     if (isPayOnDelivery(checkout.paymentMethod)) {
@@ -419,7 +428,9 @@ export default function CardapioClient({
         customer_name: checkout.name.trim(),
         customer_phone: checkout.phone.replace(/\D/g, ""),
         delivery_type: checkout.deliveryType,
-        address: checkout.address.trim() || undefined,
+        address: checkout.deliveryType === "delivery"
+          ? `${checkout.street.trim()}, ${checkout.street_number.trim()} - ${checkout.neighborhood.trim()}, CEP ${checkout.cep.trim()}`
+          : undefined,
         payment_method: checkout.paymentMethod,
         coupon_code: appliedCoupon?.code || undefined,
         items: cart.map((c) => ({
@@ -1022,15 +1033,52 @@ export default function CardapioClient({
                     <h3 className="mb-2 text-sm font-semibold text-gray-700">
                       Endereço de entrega
                     </h3>
-                    <textarea
-                      placeholder="Rua, número, bairro, complemento..."
-                      value={checkout.address}
-                      onChange={(e) =>
-                        setCheckout((p) => ({ ...p, address: e.target.value }))
-                      }
-                      rows={3}
-                      className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
-                    />
+                    {establishment.delivery_radius_km && (
+                      <p className="mb-3 text-xs text-gray-500">
+                        Atendemos entregas em raio de até {establishment.delivery_radius_km} km
+                      </p>
+                    )}
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        placeholder="Nome da rua / avenida"
+                        value={checkout.street}
+                        onChange={(e) =>
+                          setCheckout((p) => ({ ...p, street: e.target.value }))
+                        }
+                        className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          placeholder="Número"
+                          value={checkout.street_number}
+                          onChange={(e) =>
+                            setCheckout((p) => ({ ...p, street_number: e.target.value }))
+                          }
+                          className="rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Bairro"
+                          value={checkout.neighborhood}
+                          onChange={(e) =>
+                            setCheckout((p) => ({ ...p, neighborhood: e.target.value }))
+                          }
+                          className="rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="CEP (00000-000)"
+                        value={checkout.cep}
+                        onChange={(e) =>
+                          setCheckout((p) => ({ ...p, cep: e.target.value }))
+                        }
+                        maxLength={9}
+                        className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                      />
+                    </div>
                   </div>
                 )}
 

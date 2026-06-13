@@ -49,6 +49,7 @@ export default function SettingsForm({
     accepted_payment_methods: establishment.accepted_payment_methods ?? ["pix"],
     delivery_fee_enabled: establishment.delivery_fee_enabled ?? false,
     delivery_fee_amount: establishment.delivery_fee_amount ?? 0,
+    delivery_radius_km: establishment.delivery_radius_km ?? null,
     pix_key_type: establishment.pix_key_type ?? "",
     pix_key: establishment.pix_key ?? "",
   });
@@ -315,7 +316,7 @@ export default function SettingsForm({
           <h4 className="font-semibold text-gray-900">Taxa de entrega</h4>
           <p className="mt-1 text-sm text-gray-500">
             Se você entrega em casa, pode cobrar um valor fixo por entrega. Esse valor entra no
-            total do pedido no WhatsApp (Pix ou pagamento na entrega).
+            total do pedido (Pix ou pagamento na entrega).
           </p>
           <label
             className={`mt-4 flex min-h-[44px] cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 ${
@@ -361,6 +362,30 @@ export default function SettingsForm({
               />
             </div>
           )}
+
+          <div className="mt-4">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Raio máximo de entrega (km)
+            </label>
+            <p className="mb-2 text-xs text-gray-500">
+              Defina até quantos km você realiza entregas. Deixe em branco para não exibir essa informação.
+            </p>
+            <input
+              type="number"
+              min={0}
+              max={500}
+              step={1}
+              placeholder="Ex: 5"
+              value={form.delivery_radius_km ?? ""}
+              onChange={(e) =>
+                setForm((p) => ({
+                  ...p,
+                  delivery_radius_km: e.target.value ? parseInt(e.target.value, 10) : null,
+                }))
+              }
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand sm:max-w-xs"
+            />
+          </div>
         </div>
 
         <div className="mt-6 border-t border-gray-100 pt-6">

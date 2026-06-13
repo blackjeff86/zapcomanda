@@ -95,6 +95,10 @@ export async function PATCH(request: NextRequest) {
         : 0;
     }
 
+    if (parsed.data.delivery_radius_km !== undefined) {
+      updates.delivery_radius_km = parsed.data.delivery_radius_km ?? null;
+    }
+
     if (parsed.data.pix_key !== undefined || parsed.data.pix_key_type !== undefined) {
       const pixKey = parsed.data.pix_key?.trim() ?? "";
       if (pixKey && parsed.data.pix_key_type) {

@@ -92,6 +92,7 @@ export interface Establishment {
   accepted_payment_methods: PaymentMethod[];
   delivery_fee_enabled: boolean;
   delivery_fee_amount: number;
+  delivery_radius_km: number | null;
   pix_key_type: PixKeyType | null;
   pix_key: string | null;
   created_at: string;
