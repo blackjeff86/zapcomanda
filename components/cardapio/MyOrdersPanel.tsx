@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type OrderStatus =
   | "awaiting_payment"
@@ -93,13 +93,7 @@ export default function MyOrdersPanel({
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  async function search(e: React.FormEvent) {
-    e.preventDefault();
-    const digits = phone.replace(/\D/g, "");
-    if (digits.length < 10) {
-      setError("Digite um número de WhatsApp válido.");
-      return;
-    }
+  async function doSearch(digits: string) {
     setLoading(true);
     setError(null);
     setOrders(null);
@@ -126,6 +120,25 @@ export default function MyOrdersPanel({
       setLoading(false);
     }
   }
+
+  async function search(e: React.FormEvent) {
+    e.preventDefault();
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length < 10) {
+      setError("Digite um número de WhatsApp válido.");
+      return;
+    }
+    await doSearch(digits);
+  }
+
+  // Auto-search on mount when phone is already known (e.g. after page refresh)
+  useEffect(() => {
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length >= 10) {
+      void doSearch(digits);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex h-full flex-col">
