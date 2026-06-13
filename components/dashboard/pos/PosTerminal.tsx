@@ -71,7 +71,7 @@ export default function PosTerminal() {
   }, []);
 
   const categories = useMemo(() => {
-    const cats = [...new Set(menuItems.map((i) => i.category))].sort();
+    const cats = Array.from(new Set(menuItems.map((i) => i.category))).sort();
     return cats;
   }, [menuItems]);
 
