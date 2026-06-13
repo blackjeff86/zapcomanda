@@ -12,6 +12,11 @@ export async function GET() {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
+  if (access.userRole === "caixa") {
+    const { pix_key: _k, pix_key_type: _t, ...safe } = access.establishment;
+    return NextResponse.json(safe);
+  }
+
   return NextResponse.json(access.establishment);
 }
 
@@ -99,7 +104,10 @@ export async function PATCH(request: NextRequest) {
       updates.delivery_radius_km = parsed.data.delivery_radius_km ?? null;
     }
 
-    if (parsed.data.pix_key !== undefined || parsed.data.pix_key_type !== undefined) {
+    if (
+      access.userRole !== "caixa" &&
+      (parsed.data.pix_key !== undefined || parsed.data.pix_key_type !== undefined)
+    ) {
       const pixKey = parsed.data.pix_key?.trim() ?? "";
       if (pixKey && parsed.data.pix_key_type) {
         const { normalizePixKey } = await import("@/lib/payments/pix-key");

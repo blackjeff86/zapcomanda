@@ -10,7 +10,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { bypassAuth, establishment } = await getDashboardContext();
+  const { bypassAuth, establishment, userRole } = await getDashboardContext();
 
   return (
     <DashboardShell
@@ -20,6 +20,7 @@ export default async function DashboardLayout({
       plan={establishment.plan}
       isManuallyClose={establishment.is_manually_closed}
       devMode={bypassAuth}
+      userRole={userRole}
     >
       {children}
     </DashboardShell>

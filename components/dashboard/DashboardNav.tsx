@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { MemberRole } from "@/types/database";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Pedidos", icon: "orders", pro: false },
-  { href: "/dashboard/caixa", label: "Caixa", icon: "pos", pro: false },
-  { href: "/dashboard/menu", label: "Cardápio", icon: "menu", pro: false },
-  { href: "/dashboard/clientes", label: "Clientes", icon: "customers", pro: false },
-  { href: "/dashboard/relatorio", label: "Relatório", icon: "report", pro: true },
-  { href: "/dashboard/broadcast", label: "Broadcast", icon: "broadcast", pro: true },
-  { href: "/dashboard/settings", label: "Configurações", icon: "settings", pro: false },
+  { href: "/dashboard", label: "Pedidos", icon: "orders", pro: false, adminOnly: false },
+  { href: "/dashboard/caixa", label: "Caixa", icon: "pos", pro: false, adminOnly: false },
+  { href: "/dashboard/menu", label: "Cardápio", icon: "menu", pro: false, adminOnly: false },
+  { href: "/dashboard/clientes", label: "Clientes", icon: "customers", pro: false, adminOnly: false },
+  { href: "/dashboard/relatorio", label: "Relatório", icon: "report", pro: true, adminOnly: false },
+  { href: "/dashboard/broadcast", label: "Broadcast", icon: "broadcast", pro: true, adminOnly: false },
+  { href: "/dashboard/membros", label: "Membros", icon: "members", pro: false, adminOnly: true },
+  { href: "/dashboard/settings", label: "Configurações", icon: "settings", pro: false, adminOnly: false },
 ] as const;
 
 function NavIcon({ icon }: { icon: string }) {
@@ -56,6 +58,13 @@ function NavIcon({ icon }: { icon: string }) {
       </svg>
     );
   }
+  if (icon === "members") {
+    return (
+      <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+      </svg>
+    );
+  }
   return (
     <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -69,12 +78,13 @@ function isNavActive(href: string, pathname: string) {
   return pathname.startsWith(href);
 }
 
-export function DashboardSidebarNav() {
+export function DashboardSidebarNav({ userRole = "admin" }: { userRole?: MemberRole }) {
   const pathname = usePathname();
+  const visibleItems = NAV_ITEMS.filter((item) => !item.adminOnly || userRole === "admin");
 
   return (
     <nav className="flex-1 space-y-1 p-3">
-      {NAV_ITEMS.map((item) => {
+      {visibleItems.map((item) => {
         const active = isNavActive(item.href, pathname);
         return (
           <Link
@@ -100,12 +110,13 @@ export function DashboardSidebarNav() {
   );
 }
 
-export function DashboardMobileNav() {
+export function DashboardMobileNav({ userRole = "admin" }: { userRole?: MemberRole }) {
   const pathname = usePathname();
+  const visibleItems = NAV_ITEMS.filter((item) => !item.adminOnly || userRole === "admin");
 
   return (
     <nav className="mt-3 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {NAV_ITEMS.map((item) => {
+      {visibleItems.map((item) => {
         const active = isNavActive(item.href, pathname);
         return (
           <Link

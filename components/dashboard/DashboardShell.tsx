@@ -10,7 +10,7 @@ import {
   DashboardSearchProvider,
 } from "@/components/dashboard/DashboardSearch";
 import DashboardQuickActions from "@/components/dashboard/DashboardQuickActions";
-import type { PlanType } from "@/types/database";
+import type { MemberRole, PlanType } from "@/types/database";
 
 export default function DashboardShell({
   establishmentId,
@@ -19,6 +19,7 @@ export default function DashboardShell({
   plan,
   isManuallyClose = false,
   devMode = false,
+  userRole = "admin",
   children,
 }: {
   establishmentId: string;
@@ -27,6 +28,7 @@ export default function DashboardShell({
   plan: PlanType;
   isManuallyClose?: boolean;
   devMode?: boolean;
+  userRole?: MemberRole;
   children: React.ReactNode;
 }) {
   const formattedPhone = whatsappNumber
@@ -57,7 +59,7 @@ export default function DashboardShell({
               <DashboardSearchBar establishmentId={establishmentId} variant="sidebar" />
             </div>
 
-            <DashboardSidebarNav />
+            <DashboardSidebarNav userRole={userRole} />
 
             <div className="mt-auto">
               {devMode && (
@@ -94,7 +96,7 @@ export default function DashboardShell({
               <div className="relative border-b border-gray-100 pb-3">
                 <DashboardSearchBar establishmentId={establishmentId} variant="mobile" />
               </div>
-              <DashboardMobileNav />
+              <DashboardMobileNav userRole={userRole} />
               <DashboardQuickActions
                 initialIsClosed={isManuallyClose}
                 devMode={devMode}

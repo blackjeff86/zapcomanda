@@ -1,5 +1,17 @@
 export type EstablishmentCategory = "lanchonete" | "quentinha" | "doces";
 export type PlanType = "basic" | "pro";
+export type MemberRole = "admin" | "caixa";
+
+export interface EstablishmentMember {
+  id: string;
+  establishment_id: string;
+  user_id: string;
+  role: MemberRole;
+  name: string;
+  email: string;
+  created_at: string;
+  updated_at: string;
+}
 export type OrderStatus =
   | "awaiting_payment"
   | "paid"

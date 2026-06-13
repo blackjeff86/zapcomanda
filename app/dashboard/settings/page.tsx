@@ -7,7 +7,12 @@ export const metadata = {
 };
 
 export default async function SettingsPage() {
-  const { devMock, establishment } = await getDashboardContext();
+  const { devMock, establishment, userRole } = await getDashboardContext();
+
+  const safeEstablishment =
+    userRole === "caixa"
+      ? { ...establishment, pix_key: null, pix_key_type: null }
+      : establishment;
 
   return (
     <>
@@ -16,7 +21,7 @@ export default async function SettingsPage() {
         description="Dados do negócio, plano, pagamentos e integrações."
       />
 
-      <SettingsForm establishment={establishment} devMock={devMock} />
+      <SettingsForm establishment={safeEstablishment} devMock={devMock} userRole={userRole} />
     </>
   );
 }
