@@ -13,7 +13,8 @@ export async function GET() {
   }
 
   if (access.userRole === "caixa") {
-    const { pix_key: _k, pix_key_type: _t, ...safe } = access.establishment;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { pix_key, pix_key_type, ...safe } = access.establishment;
     return NextResponse.json(safe);
   }
 
