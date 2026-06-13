@@ -6,6 +6,9 @@ import {
   categoryAnchorId,
   groupMenuItemsByCategory,
 } from "@/lib/menu/group-by-category";
+import { matchesSearchAny } from "@/lib/search/match-text";
+import SearchInput from "@/components/shared/SearchInput";
+import PublicFooter from "@/components/public/PublicFooter";
 import CardapioStoreHeader from "./CardapioStoreHeader";
 import MyOrdersPanel from "./MyOrdersPanel";
 
@@ -104,9 +107,24 @@ export default function CardapioClient({
 }) {
   const brand = establishment.primary_color;
 
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const searchableMenuItems = useMemo(() => {
+    const q = searchQuery.trim();
+    if (!q) return menuItems;
+    return menuItems.filter((item) =>
+      matchesSearchAny(q, [
+        item.name,
+        item.description ?? "",
+        item.category,
+        ...item.menu_item_addons.map((a) => a.name),
+      ])
+    );
+  }, [menuItems, searchQuery]);
+
   const groupedMenu = useMemo(
-    () => groupMenuItemsByCategory(menuItems),
-    [menuItems]
+    () => groupMenuItemsByCategory(searchableMenuItems),
+    [searchableMenuItems]
   );
 
   const categories = useMemo(
@@ -443,6 +461,15 @@ export default function CardapioClient({
     <div className="min-h-screen bg-gray-50 pb-28">
       <CardapioStoreHeader establishment={establishment} />
 
+      {/* Busca */}
+      <div className="border-b border-gray-100 bg-white px-3 py-2 sm:px-4">
+        <SearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Buscar produtos..."
+        />
+      </div>
+
       {/* Category tabs + Meus pedidos */}
       <div className="sticky top-0 z-20 border-b border-gray-100 bg-white shadow-sm">
         <div className="flex items-center gap-2 px-3 py-2 sm:px-4">
@@ -475,7 +502,21 @@ export default function CardapioClient({
 
       {/* Items grouped by category */}
       <div className="px-4 pt-4 space-y-6">
-        {visibleGroups.map(({ category, items: categoryItems }) => (
+        {visibleGroups.length === 0 && searchQuery.trim() ? (
+          <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center">
+            <p className="text-gray-600">
+              Nenhum produto encontrado para &ldquo;{searchQuery.trim()}&rdquo;
+            </p>
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="mt-3 text-sm font-medium text-brand hover:underline"
+            >
+              Limpar busca
+            </button>
+          </div>
+        ) : (
+        visibleGroups.map(({ category, items: categoryItems }) => (
           <section
             key={category}
             id={categoryAnchorId(category)}
@@ -548,8 +589,11 @@ export default function CardapioClient({
               })}
             </div>
           </section>
-        ))}
+        ))
+        )}
       </div>
+
+      {screen === "menu" && <PublicFooter />}
 
       {/* Cart bar */}
       {cartCount > 0 && screen === "menu" && (

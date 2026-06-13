@@ -14,6 +14,7 @@ export default async function DashboardLayout({
 
   return (
     <DashboardShell
+      establishmentId={establishment.id}
       establishmentName={establishment.name}
       whatsappNumber={establishment.whatsapp_number}
       plan={establishment.plan}

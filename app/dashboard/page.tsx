@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDevMockOrders } from "@/lib/dev-mock";
 import { getDashboardContext } from "@/lib/dashboard/context";
@@ -70,12 +71,14 @@ export default async function DashboardPage({
         deliveredToday={deliveredToday}
       />
 
-      <OrdersBoard
-        establishmentId={establishment.id}
-        initialOrders={orders}
-        devBypass={bypassAuth}
-        devMock={devMock}
-      />
+      <Suspense fallback={<p className="text-sm text-gray-500">Carregando pedidos...</p>}>
+        <OrdersBoard
+          establishmentId={establishment.id}
+          initialOrders={orders}
+          devBypass={bypassAuth}
+          devMock={devMock}
+        />
+      </Suspense>
     </>
   );
 }

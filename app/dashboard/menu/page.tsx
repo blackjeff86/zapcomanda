@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getDevMockMenuItems } from "@/lib/dev-mock";
 import { getDashboardContext } from "@/lib/dashboard/context";
 import { loadMenuItems } from "@/lib/dashboard/load-menu";
@@ -22,12 +23,14 @@ export default async function MenuPage() {
         description="Organize por categoria. Use os filtros para ver só uma seção ou todos os produtos."
       />
 
-      <MenuManager
-        initialItems={items}
-        devMock={devMock}
-        establishmentCategory={establishment.category}
-        plan={establishment.plan}
-      />
+      <Suspense fallback={<p className="text-sm text-gray-500">Carregando cardápio...</p>}>
+        <MenuManager
+          initialItems={items}
+          devMock={devMock}
+          establishmentCategory={establishment.category}
+          plan={establishment.plan}
+        />
+      </Suspense>
     </>
   );
 }

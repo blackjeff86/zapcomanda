@@ -1,12 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import OrderCard from "@/components/dashboard/OrderCard";
 import PendingPaymentReport from "@/components/dashboard/PendingPaymentReport";
+import { useDashboardSearch } from "@/components/dashboard/DashboardSearch";
 import { createClient } from "@/lib/supabase/client";
 import { isActiveOrderStatus } from "@/lib/orders/status-ui";
 import { ORDER_LIST_SELECT } from "@/lib/orders/select";
 import { normalizeOrderRow, type OrderRow } from "@/lib/orders/normalize";
+import { matchesSearchAny } from "@/lib/search/match-text";
 import type { OrderStatus } from "@/types/database";
 
 type MainFilter = "active" | "delivered" | "all";
@@ -49,6 +52,9 @@ export default function OrdersBoard({
   const [showStageFilters, setShowStageFilters] = useState(false);
   const [stageFilter, setStageFilter] = useState<OrderStatus | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const { query: searchQuery } = useDashboardSearch();
+  const searchParams = useSearchParams();
+  const highlightOrderId = searchParams.get("highlightOrder");
 
   const fetchOrders = useCallback(async () => {
     if (devMock) return;
@@ -134,8 +140,45 @@ export default function OrdersBoard({
       list = list.filter((o) => o.status === stageFilter);
     }
 
+    const q = searchQuery.trim();
+    if (q) {
+      list = list.filter((order) =>
+        matchesSearchAny(q, [
+          order.customers.name ?? "",
+          order.customers.phone,
+          order.id,
+          order.id.slice(0, 8),
+          order.notes ?? "",
+          ...order.order_items.map((i) => i.item_name),
+        ])
+      );
+    }
+
     return list;
-  }, [orders, filter, stageFilter]);
+  }, [orders, filter, stageFilter, searchQuery]);
+
+  useEffect(() => {
+    if (!highlightOrderId) return;
+
+    const order = orders.find((o) => o.id === highlightOrderId);
+    if (order && filter === "active" && !isActiveOrderStatus(order.status)) {
+      setFilter("all");
+      setStageFilter(null);
+    }
+
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById(`order-${highlightOrderId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-2", "ring-brand", "ring-offset-2");
+        window.setTimeout(() => {
+          el.classList.remove("ring-2", "ring-brand", "ring-offset-2");
+        }, 2500);
+      }
+    }, 100);
+
+    return () => window.clearTimeout(timer);
+  }, [highlightOrderId, orders, filter]);
 
   async function updateStatus(
     orderId: string,

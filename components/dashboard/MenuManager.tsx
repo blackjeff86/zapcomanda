@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import MenuItemForm from "@/components/dashboard/MenuItemForm";
 import ProFeatureUpsell from "@/components/dashboard/ProFeatureUpsell";
+import { useDashboardSearch } from "@/components/dashboard/DashboardSearch";
 import {
   EMPTY_MENU_ITEM_FORM,
   formStateToPayload,
@@ -16,6 +18,7 @@ import {
 } from "@/lib/menu/group-by-category";
 import { supportsDailyMenuCategory } from "@/lib/establishment/categories";
 import { canUseDailyMenu } from "@/lib/plans/features";
+import { matchesSearchAny } from "@/lib/search/match-text";
 import type { EstablishmentCategory, PlanType } from "@/types/database";
 
 function formatCurrency(value: number) {
@@ -49,6 +52,9 @@ export default function MenuManager({
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const { query: searchQuery } = useDashboardSearch();
+  const searchParams = useSearchParams();
+  const highlightItemId = searchParams.get("highlightItem");
 
   const fetchItems = useCallback(async () => {
     const response = await fetch("/api/menu-items");
@@ -64,8 +70,21 @@ export default function MenuManager({
     if (categoryFilter !== "all") {
       list = list.filter((i) => i.category === categoryFilter);
     }
+
+    const q = searchQuery.trim();
+    if (q) {
+      list = list.filter((item) =>
+        matchesSearchAny(q, [
+          item.name,
+          item.description ?? "",
+          item.category,
+          ...item.addons.map((a) => a.name),
+        ])
+      );
+    }
+
     return list;
-  }, [items, filter, categoryFilter]);
+  }, [items, filter, categoryFilter, searchQuery]);
 
   const allCategories = useMemo(
     () => groupMenuItemsByCategory(items).map((g) => g.category),
@@ -85,6 +104,33 @@ export default function MenuManager({
       return next;
     });
   }
+
+  useEffect(() => {
+    if (!highlightItemId) return;
+
+    const item = items.find((i) => i.id === highlightItemId);
+    if (item) {
+      setCategoryFilter("all");
+      setCollapsedCategories((prev) => {
+        const next = new Set(prev);
+        next.delete(item.category);
+        return next;
+      });
+    }
+
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById(`menu-item-${highlightItemId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-2", "ring-brand", "ring-offset-2");
+        window.setTimeout(() => {
+          el.classList.remove("ring-2", "ring-brand", "ring-offset-2");
+        }, 2500);
+      }
+    }, 150);
+
+    return () => window.clearTimeout(timer);
+  }, [highlightItemId, items]);
 
   function startEdit(item: MenuItemWithAddons) {
     setEditingId(item.id);
@@ -346,7 +392,7 @@ export default function MenuManager({
               {!collapsed && (
                 <div className="divide-y divide-gray-100">
                   {categoryItems.map((item) => (
-                    <article key={item.id} className="p-4 sm:p-5">
+                    <article key={item.id} id={`menu-item-${item.id}`} className="p-4 sm:p-5">
                       {editingId === item.id ? (
                         <MenuItemForm
                           title={`Editar: ${item.name}`}

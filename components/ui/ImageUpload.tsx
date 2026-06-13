@@ -70,8 +70,10 @@ export default function ImageUpload({
           <img
             src={value}
             alt="Preview"
-            className={`shrink-0 rounded-xl border border-gray-200 object-cover ${
-              aspectSquare ? "h-20 w-20" : "h-20 w-32"
+            className={`shrink-0 rounded-xl border border-gray-200 ${
+              aspectSquare
+                ? "h-20 w-20 object-cover"
+                : "h-20 w-full max-w-[200px] object-contain"
             }`}
             onError={() => setImgError(true)}
           />

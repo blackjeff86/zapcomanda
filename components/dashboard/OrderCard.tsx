@@ -143,6 +143,7 @@ export default function OrderCard({
       />
 
     <article
+      id={`order-${order.id}`}
       className={`rounded-xl border border-gray-200 border-l-4 bg-white shadow-sm ${ui.borderClass}`}
     >
       <div className="p-3 sm:p-4">

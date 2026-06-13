@@ -215,7 +215,7 @@ export default function SettingsForm({
               onChange={(url) => setForm((p) => ({ ...p, cover_url: url }))}
               folder="covers"
               label="Foto de capa do cardápio"
-              hint="Banner no topo da página pública · JPG, PNG ou WebP"
+              hint="Banner largo recomendado (ex.: 1200×400 px). A imagem aparece inteira, sem cortes."
             />
           </div>
 

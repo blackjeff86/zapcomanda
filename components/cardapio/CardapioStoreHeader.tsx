@@ -52,17 +52,17 @@ export default function CardapioStoreHeader({
 
   return (
     <header className="bg-white">
-      {/* Cover */}
-      <div className="relative">
+      {/* Cover — proporção natural da imagem (ex. 1200×400), sem max-height */}
+      <div className="w-full bg-gray-100">
         {establishment.cover_url ? (
           <img
             src={establishment.cover_url}
             alt=""
-            className="h-28 w-full object-cover sm:h-32"
+            className="block w-full h-auto"
           />
         ) : (
           <div
-            className="h-28 w-full sm:h-32"
+            className="h-24 w-full sm:h-28"
             style={{
               background: `linear-gradient(135deg, ${brand} 0%, ${darkenHex(brand, 0.2)} 100%)`,
             }}

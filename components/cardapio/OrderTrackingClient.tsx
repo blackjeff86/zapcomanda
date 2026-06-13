@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import PublicFooter from "@/components/public/PublicFooter";
 
 type OrderStatus =
   | "awaiting_payment"
@@ -306,6 +307,8 @@ export default function OrderTrackingClient({
         >
           Voltar ao cardápio
         </a>
+
+        <PublicFooter />
       </main>
     </div>
   );
