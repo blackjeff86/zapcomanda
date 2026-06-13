@@ -1,6 +1,7 @@
 "use client";
 
 import type { MenuItemFormState } from "@/lib/menu/form";
+import ImageUpload from "@/components/ui/ImageUpload";
 
 interface MenuItemFormProps {
   title: string;
@@ -119,15 +120,12 @@ export default function MenuItemForm({
         </div>
 
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            URL da foto (opcional)
-          </label>
-          <input
-            type="url"
+          <ImageUpload
             value={form.photo_url}
-            onChange={(e) => updateField("photo_url", e.target.value)}
-            placeholder="https://..."
-            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+            onChange={(url) => updateField("photo_url", url)}
+            folder="menu-items"
+            label="Foto do item (opcional)"
+            hint="JPG, PNG ou WebP · máx. 5 MB"
           />
         </div>
 

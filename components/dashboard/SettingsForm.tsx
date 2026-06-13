@@ -18,6 +18,7 @@ import {
 import { canUseOrderCutoff, isProPlan } from "@/lib/plans/features";
 import type { Establishment } from "@/types/database";
 import WhatsAppInstancesManager from "@/components/dashboard/WhatsAppInstancesManager";
+import ImageUpload from "@/components/ui/ImageUpload";
 
 function formatCategory(category: string) {
   return category === "quentinha" ? "Quentinha / Marmita" : "Lanchonete";
@@ -37,6 +38,7 @@ export default function SettingsForm({
     name: establishment.name,
     whatsapp_number: establishment.whatsapp_number,
     primary_color: establishment.primary_color,
+    logo_url: establishment.logo_url ?? "",
     order_cutoff_time: cutoff,
     accepted_payment_methods: establishment.accepted_payment_methods ?? ["pix"],
     delivery_fee_enabled: establishment.delivery_fee_enabled ?? false,
@@ -195,6 +197,16 @@ export default function SettingsForm({
             </div>
           )}
 
+          <div className="sm:col-span-2">
+            <ImageUpload
+              value={form.logo_url}
+              onChange={(url) => setForm((p) => ({ ...p, logo_url: url }))}
+              folder="logos"
+              label="Logo do estabelecimento"
+              hint="JPG, PNG ou WebP · máx. 5 MB"
+              aspectSquare
+            />
+          </div>
         </div>
 
         <div className="mt-6 border-t border-gray-100 pt-6">

@@ -286,6 +286,13 @@ export default function MenuManager({
                       }`}
                     >
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        {item.photo_url && (
+                          <img
+                            src={item.photo_url}
+                            alt={item.name}
+                            className="h-20 w-20 shrink-0 rounded-xl border border-gray-100 object-cover"
+                          />
+                        )}
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <h4 className="font-semibold text-gray-900">{item.name}</h4>
@@ -302,11 +309,6 @@ export default function MenuManager({
                           </div>
                           {item.description && (
                             <p className="mt-1 text-sm text-gray-500">{item.description}</p>
-                          )}
-                          {item.photo_url && (
-                            <p className="mt-1 truncate text-xs text-gray-400">
-                              Foto: {item.photo_url}
-                            </p>
                           )}
                           {item.addons.length > 0 && (
                             <p className="mt-2 text-xs text-gray-500">
