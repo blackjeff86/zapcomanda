@@ -1,8 +1,7 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { getEstablishmentForApi } from "@/lib/api/establishment-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { isProPlan } from "@/lib/plans/features";
 
 function startOfDay(d: Date): Date {
   const out = new Date(d);
@@ -16,85 +15,113 @@ function addDays(d: Date, n: number): Date {
   return out;
 }
 
-function dateLabel(d: Date): string {
-  return d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" });
+function dateLabel(d: Date, totalDays: number): string {
+  if (totalDays <= 7) {
+    return d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" });
+  }
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+}
+
+function detectOrderType(notes: string | null): "local" | "pickup" | "delivery" | "unknown" {
+  if (!notes) return "unknown";
+  if (notes.startsWith("[Consumo no local]")) return "local";
+  if (notes.startsWith("[Retirada]")) return "pickup";
+  if (notes.startsWith("[Delivery]")) return "delivery";
+  return "unknown";
 }
 
 const PAID_STATUSES = ["paid", "preparing", "out_for_delivery", "delivered"];
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const access = await getEstablishmentForApi();
-  if (!access) {
-    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-  }
+  if (!access) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const { establishment } = access;
-
-  if (!isProPlan(establishment.plan)) {
-    return NextResponse.json({ error: "Recurso exclusivo do plano Pro" }, { status: 403 });
-  }
+  const { searchParams } = new URL(request.url);
+  const periodParam = searchParams.get("period") ?? "7";
 
   const today = startOfDay(new Date());
-  const weekAgo = addDays(today, -6);
+  let periodStart: Date;
+  let totalDays: number;
+
+  if (periodParam === "month") {
+    periodStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    totalDays = today.getDate();
+  } else {
+    const days = periodParam === "30" ? 30 : 7;
+    totalDays = days;
+    periodStart = addDays(today, -(days - 1));
+  }
 
   const ordersQuery = access.bypass
     ? createAdminClient()
         .from("orders")
-        .select("id, status, total_amount, payment_method, created_at, order_items(item_name, quantity, subtotal)")
+        .select("id, status, total_amount, payment_method, delivery_fee, notes, created_at, order_items(item_name, quantity, subtotal)")
         .eq("establishment_id", establishment.id)
-        .gte("created_at", weekAgo.toISOString())
+        .gte("created_at", periodStart.toISOString())
         .order("created_at", { ascending: true })
     : (await createClient())
         .schema("zapcomanda")
         .from("orders")
-        .select("id, status, total_amount, payment_method, created_at, order_items(item_name, quantity, subtotal)")
+        .select("id, status, total_amount, payment_method, delivery_fee, notes, created_at, order_items(item_name, quantity, subtotal)")
         .eq("establishment_id", establishment.id)
-        .gte("created_at", weekAgo.toISOString())
+        .gte("created_at", periodStart.toISOString())
         .order("created_at", { ascending: true });
 
   const { data: orders, error } = await ordersQuery;
 
   if (error) {
-    console.error("Weekly report error:", error);
+    console.error("Report error:", error);
     return NextResponse.json({ error: "Erro ao buscar dados" }, { status: 500 });
   }
 
   const allOrders = orders ?? [];
 
-  // Build 7-day breakdown
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const day = addDays(today, i - 6);
+  // Build day-by-day breakdown
+  const days = Array.from({ length: totalDays }, (_, i) => {
+    const day = addDays(periodStart, i);
     return {
       date: day.toISOString().slice(0, 10),
-      label: dateLabel(day),
+      label: dateLabel(day, totalDays),
       revenue: 0,
       orders: 0,
     };
   });
 
-  // Payment method counts
   const paymentCounts: Record<string, number> = {};
-
-  // Item frequency map
   const itemMap: Record<string, { name: string; quantity: number; revenue: number }> = {};
+  const orderTypes = { local: 0, pickup: 0, delivery: 0, unknown: 0 };
 
-  let weekRevenue = 0;
-  let weekOrders = 0;
+  let periodRevenue = 0;
+  let periodOrders = 0;
   let paidOrders = 0;
+  let cancelledOrders = 0;
+  let deliveryRevenue = 0;
 
   for (const order of allOrders) {
-    weekOrders++;
+    periodOrders++;
     const orderDate = order.created_at.slice(0, 10);
     const dayEntry = days.find((d) => d.date === orderDate);
     if (dayEntry) dayEntry.orders++;
+
+    if (order.status === "cancelled") {
+      cancelledOrders++;
+      continue;
+    }
+
+    const orderType = detectOrderType(order.notes as string | null);
+    orderTypes[orderType]++;
 
     const isPaid = PAID_STATUSES.includes(order.status);
 
     if (isPaid) {
       const amount = Number(order.total_amount);
-      weekRevenue += amount;
+      periodRevenue += amount;
       paidOrders++;
       if (dayEntry) dayEntry.revenue += amount;
+
+      const fee = Number(order.delivery_fee ?? 0);
+      deliveryRevenue += fee;
 
       if (order.payment_method) {
         paymentCounts[order.payment_method] = (paymentCounts[order.payment_method] ?? 0) + 1;
@@ -112,19 +139,27 @@ export async function GET() {
 
   const topItems = Object.values(itemMap)
     .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, 5);
+    .slice(0, 8);
 
-  const avgOrderValue = paidOrders > 0 ? weekRevenue / paidOrders : 0;
+  const avgOrderValue = paidOrders > 0 ? periodRevenue / paidOrders : 0;
+  const conversionRate = periodOrders > 0 ? Math.round((paidOrders / periodOrders) * 100) : 0;
+  const dailyAvg = totalDays > 0 ? periodRevenue / totalDays : 0;
 
   return NextResponse.json({
-    week_start: weekAgo.toISOString().slice(0, 10),
-    week_end: today.toISOString().slice(0, 10),
-    week_revenue: weekRevenue,
-    week_orders: weekOrders,
+    period_start: periodStart.toISOString().slice(0, 10),
+    period_end: today.toISOString().slice(0, 10),
+    total_days: totalDays,
+    period_revenue: periodRevenue,
+    period_orders: periodOrders,
     paid_orders: paidOrders,
+    cancelled_orders: cancelledOrders,
     avg_order_value: avgOrderValue,
+    daily_avg: dailyAvg,
+    conversion_rate: conversionRate,
+    delivery_revenue: deliveryRevenue,
     days,
     top_items: topItems,
     payment_methods: paymentCounts,
+    order_types: orderTypes,
   });
 }

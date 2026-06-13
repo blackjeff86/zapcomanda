@@ -10,7 +10,8 @@ import {
   DashboardSearchProvider,
 } from "@/components/dashboard/DashboardSearch";
 import DashboardQuickActions from "@/components/dashboard/DashboardQuickActions";
-import type { MemberRole, PlanType } from "@/types/database";
+import BillingBanner from "@/components/dashboard/BillingBanner";
+import type { BillingNotification, MemberRole, PlanType } from "@/types/database";
 
 export default function DashboardShell({
   establishmentId,
@@ -20,6 +21,7 @@ export default function DashboardShell({
   isManuallyClose = false,
   devMode = false,
   userRole = "admin",
+  billingNotification = null,
   children,
 }: {
   establishmentId: string;
@@ -29,6 +31,7 @@ export default function DashboardShell({
   isManuallyClose?: boolean;
   devMode?: boolean;
   userRole?: MemberRole;
+  billingNotification?: BillingNotification | null;
   children: React.ReactNode;
 }) {
   const formattedPhone = whatsappNumber
@@ -103,7 +106,12 @@ export default function DashboardShell({
               />
             </header>
 
-            <main className="px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+            <main className="px-4 py-6 sm:px-6 lg:px-8">
+              {billingNotification && userRole !== "caixa" && (
+                <BillingBanner notification={billingNotification} userRole={userRole} />
+              )}
+              {children}
+            </main>
           </div>
         </div>
       </div>

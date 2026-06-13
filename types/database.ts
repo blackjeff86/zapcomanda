@@ -229,6 +229,38 @@ export interface WhatsAppSession {
   updated_at: string;
 }
 
+export type SubscriptionStatus = "trial" | "active" | "overdue" | "cancelled";
+export type BillingNotificationStatus = "pending" | "confirmed" | "verified";
+
+export interface Subscription {
+  id: string;
+  establishment_id: string;
+  status: SubscriptionStatus;
+  trial_ends_at: string;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  plan_amount: number;
+  last_payment_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BillingNotification {
+  id: string;
+  establishment_id: string;
+  amount: number;
+  status: BillingNotificationStatus;
+  pix_key: string;
+  pix_key_type: string;
+  pix_br_code: string;
+  message: string | null;
+  sent_at: string;
+  confirmed_at: string | null;
+  verified_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface OnboardingPayload {
   name: string;
   whatsapp_number: string;
