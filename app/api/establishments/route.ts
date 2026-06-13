@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { onboardingSchema } from "@/lib/validations/onboarding";
 import { resolveMenuItemIsDaily } from "@/lib/plans/features";
+import { generateSlug } from "@/lib/utils/slug";
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,12 +30,15 @@ export async function POST(request: NextRequest) {
 
     const { menu_items, logo_url, plan: selectedPlan, ...establishmentData } = parsed.data;
 
+    const baseSlug = generateSlug(establishmentData.name);
+
     const { data: establishment, error: establishmentError } = await supabase
       .schema("zapcomanda")
       .from("establishments")
       .insert({
         user_id: user.id,
         name: establishmentData.name,
+        slug: baseSlug || `negocio-${Date.now()}`,
         whatsapp_number: establishmentData.whatsapp_number.replace(/\D/g, ""),
         category: establishmentData.category,
         primary_color: establishmentData.primary_color,

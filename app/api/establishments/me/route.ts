@@ -70,6 +70,10 @@ export async function PATCH(request: NextRequest) {
       order_cutoff_time: proFields.order_cutoff_time ?? null,
     };
 
+    if (parsed.data.slug) {
+      updates.slug = parsed.data.slug;
+    }
+
     if (parsed.data.accepted_payment_methods) {
       updates.accepted_payment_methods = parsed.data.accepted_payment_methods;
     }

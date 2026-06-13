@@ -12,6 +12,12 @@ export const establishmentSettingsSchema = z
   primary_color: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, "Cor inválida (use formato #RRGGBB)"),
+  slug: z
+    .string()
+    .min(2, "Link muito curto")
+    .max(60, "Link muito longo")
+    .regex(/^[a-z0-9-]+$/, "Use apenas letras minúsculas, números e hífens")
+    .optional(),
   logo_url: z.string().url().optional().or(z.literal("")),
   order_cutoff_time: z
     .string()

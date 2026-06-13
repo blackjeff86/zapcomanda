@@ -36,6 +36,7 @@ export default function SettingsForm({
 
   const [form, setForm] = useState({
     name: establishment.name,
+    slug: establishment.slug ?? "",
     whatsapp_number: establishment.whatsapp_number,
     primary_color: establishment.primary_color,
     logo_url: establishment.logo_url ?? "",
@@ -206,6 +207,44 @@ export default function SettingsForm({
               hint="JPG, PNG ou WebP · máx. 5 MB"
               aspectSquare
             />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Link do cardápio digital
+            </label>
+            <div className="flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm">
+              <span className="shrink-0 text-gray-400">zapcomanda.vercel.app/cardapio/</span>
+              <input
+                value={form.slug}
+                onChange={(e) =>
+                  setForm((p) => ({
+                    ...p,
+                    slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+                  }))
+                }
+                className="min-w-0 flex-1 bg-transparent font-medium text-gray-900 outline-none"
+                placeholder="meu-restaurante"
+              />
+            </div>
+            <div className="mt-1.5 flex items-center justify-between">
+              <p className="text-xs text-gray-400">
+                Compartilhe esse link com seus clientes ou gere um QR Code.
+              </p>
+              {form.slug && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigator.clipboard.writeText(
+                      `https://zapcomanda.vercel.app/cardapio/${form.slug}`
+                    )
+                  }
+                  className="shrink-0 text-xs font-medium text-brand hover:underline"
+                >
+                  Copiar link
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

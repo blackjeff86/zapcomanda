@@ -16,6 +16,7 @@ export function getDevMockEstablishment(): Establishment {
     id: DEV_ESTABLISHMENT_ID,
     user_id: "00000000-0000-4000-8000-000000000099",
     name: "Quentinha da Dona Maria",
+    slug: "quentinha-da-dona-maria",
     whatsapp_number: "5511999887766",
     category: "quentinha",
     logo_url: null,
