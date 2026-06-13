@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import type { PaymentMethod } from "@/types/database";
+import MyOrdersPanel from "./MyOrdersPanel";
 
 type Addon = { id: string; name: string; price: number; is_active: boolean };
 
@@ -122,6 +123,7 @@ export default function CardapioClient({
   const [liveStatus, setLiveStatus] = useState<OrderStatus | null>(null);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showMyOrders, setShowMyOrders] = useState(false);
 
   // Poll order status every 10 seconds after order is placed
   useEffect(() => {
@@ -311,7 +313,15 @@ export default function CardapioClient({
             {establishment.name[0]?.toUpperCase()}
           </div>
         )}
-        <h1 className="text-base font-bold text-white">{establishment.name}</h1>
+        <h1 className="flex-1 text-base font-bold text-white">{establishment.name}</h1>
+        <button
+          type="button"
+          onClick={() => setShowMyOrders(true)}
+          className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/30"
+        >
+          <span>📋</span>
+          <span>Meus Pedidos</span>
+        </button>
       </header>
 
       {/* Category tabs */}
@@ -576,6 +586,19 @@ export default function CardapioClient({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* My Orders overlay */}
+      {showMyOrders && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-white">
+          <MyOrdersPanel
+            establishmentId={establishment.id}
+            slug={establishment.slug}
+            brand={brand}
+            initialPhone={checkout.phone}
+            onClose={() => setShowMyOrders(false)}
+          />
         </div>
       )}
 
