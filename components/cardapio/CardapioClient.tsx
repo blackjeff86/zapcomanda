@@ -98,7 +98,7 @@ export default function CardapioClient({
   const [checkout, setCheckout] = useState<CheckoutForm>({
     name: "",
     phone: "",
-    deliveryType: establishment.delivery_fee_enabled ? "delivery" : "pickup",
+    deliveryType: "delivery",
     address: "",
     paymentMethod: establishment.accepted_payment_methods[0] ?? "cash",
   });
@@ -592,36 +592,36 @@ export default function CardapioClient({
                   />
                 </div>
 
-                {establishment.delivery_fee_enabled && (
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-semibold text-gray-700">Recebimento</h3>
-                    {(["delivery", "pickup"] as const).map((type) => (
-                      <label
-                        key={type}
-                        className="flex cursor-pointer items-center gap-3 rounded-xl border p-3"
-                        style={
-                          checkout.deliveryType === type
-                            ? { borderColor: brand, backgroundColor: `${brand}10` }
-                            : {}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-700">Recebimento</h3>
+                  {(["delivery", "pickup"] as const).map((type) => (
+                    <label
+                      key={type}
+                      className="flex cursor-pointer items-center gap-3 rounded-xl border p-3"
+                      style={
+                        checkout.deliveryType === type
+                          ? { borderColor: brand, backgroundColor: `${brand}10` }
+                          : {}
+                      }
+                    >
+                      <input
+                        type="radio"
+                        name="deliveryType"
+                        checked={checkout.deliveryType === type}
+                        onChange={() =>
+                          setCheckout((p) => ({ ...p, deliveryType: type }))
                         }
-                      >
-                        <input
-                          type="radio"
-                          name="deliveryType"
-                          checked={checkout.deliveryType === type}
-                          onChange={() =>
-                            setCheckout((p) => ({ ...p, deliveryType: type }))
-                          }
-                        />
-                        <span className="text-sm font-medium text-gray-900">
-                          {type === "delivery"
+                      />
+                      <span className="text-sm font-medium text-gray-900">
+                        {type === "delivery"
+                          ? establishment.delivery_fee_enabled
                             ? `Entrega — + ${fmt(Number(establishment.delivery_fee_amount))}`
-                            : "Retirar no local — grátis"}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
+                            : "Entrega"
+                          : "Retirar no local"}
+                      </span>
+                    </label>
+                  ))}
+                </div>
 
                 {/* Address — only when delivery */}
                 {checkout.deliveryType === "delivery" && (
