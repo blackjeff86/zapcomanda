@@ -1,3 +1,6 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { isInternalAdminEmail } from "@/lib/admin/auth";
 import OnboardingForm from "@/components/onboarding/OnboardingForm";
 
 export const metadata = {
@@ -5,7 +8,16 @@ export const metadata = {
   description: "Configure seu estabelecimento no ZapComanda",
 };
 
-export default function OnboardingPage() {
+export default async function OnboardingPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user && isInternalAdminEmail(user.email)) {
+    redirect("/admin/clientes");
+  }
+
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="mb-10 text-center">
