@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Logo from "@/components/brand/Logo";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: "dashboard", exact: true },
@@ -33,8 +34,8 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
       <div className="flex flex-col h-full py-6 px-4">
         {/* Logo */}
         <div className="mb-8 px-2">
-          <h1 className="text-headline-md text-primary font-bold">ZapComanda</h1>
-          <p className="text-body-sm text-on-surface-variant">Painel Administrativo</p>
+          <Logo size={32} showWordmark variant="comanda" />
+          <p className="text-body-sm text-on-surface-variant mt-1 ml-0.5">Painel Administrativo</p>
         </div>
 
         {/* Navigation */}

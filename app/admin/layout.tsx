@@ -14,17 +14,12 @@ export default async function AdminLayout({
   const user = await requireInternalAdmin();
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
-      {/* Google Fonts */}
+    <div className="min-h-screen bg-surface text-on-surface">
+      {/* Material Symbols icon font */}
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
-      />
-      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
       />
 
       <AdminSidebar userEmail={user.email ?? ""} />

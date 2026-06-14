@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Logo from "@/components/brand/Logo";
 
 export default function AdminTopBar() {
   const [searchFocused, setSearchFocused] = useState(false);
@@ -12,7 +13,7 @@ export default function AdminTopBar() {
         <button type="button" className="p-1">
           <span className="material-symbols-outlined text-on-surface-variant">menu</span>
         </button>
-        <span className="text-headline-md font-bold text-primary">ZapComanda</span>
+        <Logo size={28} showWordmark variant="comanda" />
       </div>
 
       {/* Search bar */}
