@@ -29,14 +29,7 @@ export function formatPhoneDisplay(phone: string): string {
 
 export function isStoreOpenForOrders(
   isManuallyClosed: boolean,
-  orderCutoffTime: string | null | undefined
+  _orderCutoffTime?: string | null
 ): boolean {
-  if (isManuallyClosed) return false;
-  if (!orderCutoffTime) return true;
-
-  const now = new Date();
-  const [hours, minutes] = orderCutoffTime.split(":").map(Number);
-  const cutoff = new Date();
-  cutoff.setHours(hours, minutes ?? 0, 0, 0);
-  return now <= cutoff;
+  return !isManuallyClosed;
 }
