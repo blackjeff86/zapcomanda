@@ -107,6 +107,7 @@ export interface Establishment {
   delivery_radius_km: number | null;
   pix_key_type: PixKeyType | null;
   pix_key: string | null;
+  pos_order_flow: "preparing" | "out_for_delivery" | "delivered" | null;
   created_at: string;
   updated_at: string;
 }

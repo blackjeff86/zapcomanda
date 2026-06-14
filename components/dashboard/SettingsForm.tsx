@@ -54,6 +54,7 @@ export default function SettingsForm({
     delivery_radius_km: establishment.delivery_radius_km ?? null,
     pix_key_type: establishment.pix_key_type ?? "",
     pix_key: establishment.pix_key ?? "",
+    pos_order_flow: (establishment.pos_order_flow ?? "preparing") as "preparing" | "out_for_delivery" | "delivered",
   });
   useEffect(() => {
     if (establishment.logo_url) {
@@ -507,6 +508,58 @@ export default function SettingsForm({
             </div>
           </div>
         )}
+
+        <div className="mt-6 border-t border-gray-100 pt-6">
+          <h4 className="font-semibold text-gray-900">Configurações do Caixa</h4>
+          <p className="mt-1 text-sm text-gray-500">
+            Defina até qual etapa a venda registrada diretamente no caixa avança automaticamente.
+          </p>
+          <ul className="mt-4 space-y-2">
+            {([
+              {
+                value: "preparing",
+                label: "Aguardando preparo",
+                description: "A venda entra na fila da cozinha para ser preparada.",
+              },
+              {
+                value: "out_for_delivery",
+                label: "Pronto / aguardando retirada",
+                description: "Pula o preparo — ideal quando o item já está pronto no balcão.",
+              },
+              {
+                value: "delivered",
+                label: "Entregue imediatamente",
+                description: "Marca como entregue na hora — use quando o cliente já está com o produto em mãos.",
+              },
+            ] as const).map(({ value, label, description }) => {
+              const checked = form.pos_order_flow === value;
+              return (
+                <li key={value}>
+                  <label
+                    className={`flex cursor-pointer gap-3 rounded-lg border px-3 py-3 transition ${
+                      checked
+                        ? "border-brand bg-brand-50"
+                        : "border-gray-200 bg-white hover:border-gray-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="pos_order_flow"
+                      value={value}
+                      checked={checked}
+                      onChange={() => setForm((p) => ({ ...p, pos_order_flow: value }))}
+                      className="mt-0.5 h-4 w-4 shrink-0 border-gray-300 text-brand focus:ring-brand"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{label}</p>
+                      <p className="text-xs text-gray-500">{description}</p>
+                    </div>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
 
         <button
           type="submit"

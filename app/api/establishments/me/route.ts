@@ -105,6 +105,10 @@ export async function PATCH(request: NextRequest) {
       updates.delivery_radius_km = parsed.data.delivery_radius_km ?? null;
     }
 
+    if (parsed.data.pos_order_flow !== undefined) {
+      updates.pos_order_flow = parsed.data.pos_order_flow;
+    }
+
     if (
       access.userRole !== "caixa" &&
       (parsed.data.pix_key !== undefined || parsed.data.pix_key_type !== undefined)

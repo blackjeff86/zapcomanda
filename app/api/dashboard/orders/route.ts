@@ -79,9 +79,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const posFlow = access.establishment.pos_order_flow ?? "preparing";
+    const posDeliveredFields = posFlow === "delivered"
+      ? { delivered_at: new Date().toISOString(), delivery_confirmed_by: "owner" }
+      : {};
     const orderRow = {
       establishment_id: access.establishment.id,
-      status: "preparing",
+      status: posFlow,
       total_amount,
       delivery_fee: 0,
       discount_amount: 0,
@@ -90,6 +94,7 @@ export async function POST(request: NextRequest) {
       cash_tender_amount: cash_tender_amount ?? null,
       change_amount,
       notes: notes ?? null,
+      ...posDeliveredFields,
     };
 
     if (access.bypass) {

@@ -34,6 +34,7 @@ export const establishmentSettingsSchema = z
   delivery_radius_km: z.coerce.number().int().min(0).max(500).optional().nullable(),
   pix_key_type: z.enum(["cpf", "cnpj", "email", "phone", "random"]).optional().nullable(),
   pix_key: z.string().optional().or(z.literal("")),
+  pos_order_flow: z.enum(["preparing", "out_for_delivery", "delivered"]).optional(),
 })
   .superRefine((data, ctx) => {
     const acceptsPix = data.accepted_payment_methods?.includes("pix");
