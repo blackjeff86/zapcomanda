@@ -6,12 +6,12 @@ export function isProPlan(plan: PlanType): boolean {
 }
 
 /** Cardápio do dia — disponível em todos os planos. */
-export function canUseDailyMenu(_plan: PlanType): boolean {
+export function canUseDailyMenu(): boolean {
   return true;
 }
 
 /** Horário de corte automático — disponível em todos os planos. */
-export function canUseOrderCutoff(_plan: PlanType): boolean {
+export function canUseOrderCutoff(): boolean {
   return true;
 }
 

@@ -137,7 +137,7 @@ async function getActiveMenu(establishment: Establishment): Promise<MenuItem[]> 
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
 
-  if (supportsDailyMenuCategory(establishment.category) && canUseDailyMenu(establishment.plan)) {
+  if (supportsDailyMenuCategory(establishment.category) && canUseDailyMenu()) {
     query = query.eq("is_daily", true);
   }
 
@@ -147,7 +147,7 @@ async function getActiveMenu(establishment: Establishment): Promise<MenuItem[]> 
 }
 
 function isWithinCutoff(establishment: Establishment): boolean {
-  if (!canUseOrderCutoff(establishment.plan)) return true;
+  if (!canUseOrderCutoff()) return true;
   if (!establishment.order_cutoff_time) return true;
   const now = new Date();
   const [hours, minutes] = establishment.order_cutoff_time.split(":").map(Number);
