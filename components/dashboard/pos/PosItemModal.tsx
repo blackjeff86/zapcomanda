@@ -17,7 +17,7 @@ export type PosMenuItem = {
   combo_price: number | null;
   stock_quantity: number | null;
   low_stock_threshold: number | null;
-  menu_item_addons: PosAddon[];
+  addons: PosAddon[];
 };
 
 type Props = {
@@ -37,7 +37,7 @@ export default function PosItemModal({ item, partnerName, onClose, onConfirm }: 
 
   const isCombo = item.is_combo && item.combo_price != null;
   const basePrice = isCombo ? item.combo_price! : item.price;
-  const activeAddons = item.menu_item_addons.filter((a) => selectedAddons.has(a.id));
+  const activeAddons = item.addons.filter((a) => selectedAddons.has(a.id));
   const addonTotal = activeAddons.reduce((s, a) => s + a.price, 0);
   const unitTotal = (basePrice + addonTotal) * qty;
 
@@ -94,13 +94,13 @@ export default function PosItemModal({ item, partnerName, onClose, onConfirm }: 
 
         <div className="mt-4 space-y-4 px-5">
           {/* Addons */}
-          {item.menu_item_addons.length > 0 && (
+          {item.addons.length > 0 && (
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
                 Adicionais
               </p>
               <div className="space-y-1.5">
-                {item.menu_item_addons.map((addon) => (
+                {item.addons.map((addon) => (
                   <label
                     key={addon.id}
                     className={`flex cursor-pointer items-center justify-between rounded-xl border p-3 text-sm transition ${
