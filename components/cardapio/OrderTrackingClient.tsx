@@ -75,13 +75,23 @@ const ALL_STEPS: Step[] = [
 export default function OrderTrackingClient({
   establishment,
   order,
+  pixCopyPaste,
 }: {
   establishment: Establishment;
   order: Order;
+  pixCopyPaste: string | null;
 }) {
   const brand = establishment.primary_color || "#16a34a";
   const [liveStatus, setLiveStatus] = useState<OrderStatus>(order.status);
   const [logoError, setLogoError] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  async function copyPix() {
+    if (!pixCopyPaste) return;
+    await navigator.clipboard.writeText(pixCopyPaste);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   useEffect(() => {
     const TERMINAL = new Set<OrderStatus>(["delivered", "cancelled"]);
@@ -179,6 +189,40 @@ export default function OrderTrackingClient({
             cashTenderAmount={order.cash_tender_amount}
             changeAmount={order.change_amount}
           />
+        )}
+
+        {/* PIX payment section */}
+        {order.payment_method === "pix" && liveStatus === "awaiting_payment" && pixCopyPaste && (
+          <div className="space-y-3 rounded-2xl border border-green-100 bg-green-50 p-4">
+            <p className="text-sm font-semibold text-green-800">
+              Pague agora via Pix para confirmar o pedido
+            </p>
+            <div className="flex justify-center">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pixCopyPaste)}`}
+                alt="QR Code PIX"
+                width={200}
+                height={200}
+                className="rounded-xl"
+              />
+            </div>
+            <p className="text-center text-xs text-green-700">
+              Escaneie o QR Code ou copie o código abaixo
+            </p>
+            <div className="rounded-xl border border-green-200 bg-white px-3 py-2">
+              <p className="break-all font-mono text-xs leading-relaxed text-gray-600">
+                {pixCopyPaste}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={copyPix}
+              className="w-full rounded-xl py-3 text-sm font-bold text-white"
+              style={{ backgroundColor: brand }}
+            >
+              {copied ? "Copiado!" : "Copiar código Pix"}
+            </button>
+          </div>
         )}
 
         {/* Status timeline */}

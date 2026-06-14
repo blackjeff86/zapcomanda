@@ -34,10 +34,22 @@ export default async function OrderTrackingPage({ params }: Props) {
 
   if (!order) notFound();
 
+  let pixCopyPaste: string | null = null;
+  if (order.payment_method === "pix" && order.status === "awaiting_payment") {
+    const { data: payment } = await admin
+      .schema("zapcomanda")
+      .from("payments")
+      .select("pix_copy_paste")
+      .eq("order_id", id)
+      .maybeSingle();
+    pixCopyPaste = payment?.pix_copy_paste ?? null;
+  }
+
   return (
     <OrderTrackingClient
       establishment={establishment}
       order={order}
+      pixCopyPaste={pixCopyPaste}
     />
   );
 }

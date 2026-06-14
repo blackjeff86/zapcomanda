@@ -1355,6 +1355,18 @@ export default function CardapioClient({
                       <p className="text-sm font-semibold text-green-800">
                         Pague agora via Pix para confirmar o pedido
                       </p>
+                      <div className="flex justify-center">
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(orderResult.pix_copy_paste)}`}
+                          alt="QR Code PIX"
+                          width={200}
+                          height={200}
+                          className="rounded-xl"
+                        />
+                      </div>
+                      <p className="text-center text-xs text-green-700">
+                        Escaneie o QR Code ou copie o código abaixo
+                      </p>
                       <div className="rounded-xl border border-green-200 bg-white px-3 py-2">
                         <p className="break-all font-mono text-xs leading-relaxed text-gray-600">
                           {orderResult.pix_copy_paste}

@@ -31,9 +31,9 @@ export function generateDirectPixBrCode(
 
   const pix = createStaticPix({
     merchantName: sanitizePixText(establishmentName, 25),
-    merchantCity: "SAO PAULO",
+    merchantCity: "BRASIL",
     pixKey: formatPixKeyForBrCode(pixKeyType, pixKey),
-    transactionAmount: amount,
+    transactionAmount: Math.round(amount * 100) / 100,
     infoAdicional: ref ? `Pedido ${ref}` : undefined,
     txid: ref,
   });
