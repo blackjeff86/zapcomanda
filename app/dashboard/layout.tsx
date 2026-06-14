@@ -17,17 +17,21 @@ export default async function DashboardLayout({
   let pendingNotification: BillingNotification | null = null;
 
   if (!bypassAuth && userRole !== "caixa") {
-    const admin = createAdminClient();
-    const { data } = await admin
-      .from("billing_notifications")
-      .select("*")
-      .eq("establishment_id", establishment.id)
-      .eq("status", "pending")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    try {
+      const admin = createAdminClient();
+      const { data } = await admin
+        .from("billing_notifications")
+        .select("*")
+        .eq("establishment_id", establishment.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    pendingNotification = data as BillingNotification | null;
+      pendingNotification = data as BillingNotification | null;
+    } catch {
+      // billing_notifications unavailable — render without banner
+    }
   }
 
   return (
