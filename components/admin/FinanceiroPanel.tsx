@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 
-type BillingStatus = "pending" | "confirmed" | "verified";
-
 type Billing = {
   id: string;
   establishmentId: string;
