@@ -5,30 +5,28 @@ export function isProPlan(plan: PlanType): boolean {
   return plan === "pro";
 }
 
-/** Cardápio do dia (marcar itens is_daily + filtro no bot). */
-export function canUseDailyMenu(plan: PlanType): boolean {
-  return isProPlan(plan);
+/** Cardápio do dia — disponível em todos os planos. */
+export function canUseDailyMenu(_plan: PlanType): boolean {
+  return true;
 }
 
-/** Horário de corte automático no WhatsApp. */
-export function canUseOrderCutoff(plan: PlanType): boolean {
-  return isProPlan(plan);
+/** Horário de corte automático — disponível em todos os planos. */
+export function canUseOrderCutoff(_plan: PlanType): boolean {
+  return true;
 }
 
 export function resolveMenuItemIsDaily(
-  plan: PlanType,
+  _plan: PlanType,
   establishmentCategory: EstablishmentCategory,
   requested?: boolean
 ): boolean {
   if (!supportsDailyMenuCategory(establishmentCategory)) return false;
-  if (!canUseDailyMenu(plan)) return false;
   return requested ?? true;
 }
 
 export function stripProEstablishmentFields(
-  plan: PlanType,
+  _plan: PlanType,
   data: { order_cutoff_time?: string | null }
 ): { order_cutoff_time?: string | null } {
-  if (canUseOrderCutoff(plan)) return data;
-  return { order_cutoff_time: null };
+  return data;
 }

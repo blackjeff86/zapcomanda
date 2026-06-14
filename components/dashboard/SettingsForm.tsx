@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import PlanSettingsCollapsible from "@/components/dashboard/PlanSettingsCollapsible";
-import ProFeatureUpsell from "@/components/dashboard/ProFeatureUpsell";
 import WhatsAppQrConnect from "@/components/dashboard/WhatsAppQrConnect";
 import {
   PAYMENT_METHOD_LABELS,
@@ -15,7 +14,6 @@ import {
   PIX_KEY_TYPE_LABELS,
   type PixKeyType,
 } from "@/lib/payments/pix-key";
-import { canUseOrderCutoff, isProPlan } from "@/lib/plans/features";
 import {
   formatEstablishmentCategory,
   supportsDailyMenuCategory,
@@ -65,8 +63,6 @@ export default function SettingsForm({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const hasOrderCutoff = canUseOrderCutoff(establishment.plan);
-  const isPro = isProPlan(establishment.plan);
   const acceptsPix = form.accepted_payment_methods.includes("pix");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -185,7 +181,7 @@ export default function SettingsForm({
             </div>
           </div>
 
-          {supportsDailyMenuCategory(establishment.category) && hasOrderCutoff && (
+          {supportsDailyMenuCategory(establishment.category) && (
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Horário de corte de pedidos
@@ -201,15 +197,6 @@ export default function SettingsForm({
               <p className="mt-1 text-xs text-gray-400">
                 Após esse horário, o bot informa que o prazo encerrou.
               </p>
-            </div>
-          )}
-
-          {supportsDailyMenuCategory(establishment.category) && !hasOrderCutoff && (
-            <div className="sm:col-span-2">
-              <ProFeatureUpsell
-                title="Horário de corte — plano Pro"
-                description="Defina um horário para o bot parar de aceitar pedidos (ex.: 11:00 para marmitas ou 18:00 para bolos do dia)."
-              />
             </div>
           )}
 
@@ -586,25 +573,15 @@ export default function SettingsForm({
           </p>
         </div>
 
-        {isPro ? (
-          <div className="mt-5 border-t border-gray-100 pt-5">
-            <h4 className="text-sm font-semibold text-gray-800">2º número de WhatsApp</h4>
-            <p className="mt-1 text-xs text-gray-500">
-              Adicione um segundo número para atender por dois canais diferentes.
-            </p>
-            <div className="mt-3">
-              <WhatsAppInstancesManager />
-            </div>
+        <div className="mt-5 border-t border-gray-100 pt-5">
+          <h4 className="text-sm font-semibold text-gray-800">2º número de WhatsApp</h4>
+          <p className="mt-1 text-xs text-gray-500">
+            Adicione um segundo número para atender por dois canais diferentes.
+          </p>
+          <div className="mt-3">
+            <WhatsAppInstancesManager />
           </div>
-        ) : (
-          <div className="mt-5 border-t border-gray-100 pt-5">
-            <ProFeatureUpsell
-              title="2 números de WhatsApp — plano Pro"
-              description="Use um segundo número para separar canais (ex.: loja e delivery)."
-              compact
-            />
-          </div>
-        )}
+        </div>
       </div>
 
       <PlanSettingsCollapsible establishment={establishment} devMock={devMock} />

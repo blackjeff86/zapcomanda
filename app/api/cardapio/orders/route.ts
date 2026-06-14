@@ -63,12 +63,16 @@ export async function POST(request: NextRequest) {
     const { data: establishment } = await admin
       .schema("zapcomanda")
       .from("establishments")
-      .select("id, name, delivery_fee_enabled, delivery_fee_amount, pix_key, pix_key_type, whatsapp_number")
+      .select("id, name, delivery_fee_enabled, delivery_fee_amount, pix_key, pix_key_type, whatsapp_number, is_manually_closed, order_cutoff_time")
       .eq("id", establishment_id)
       .maybeSingle();
 
     if (!establishment) {
       return NextResponse.json({ error: "Estabelecimento não encontrado" }, { status: 404 });
+    }
+
+    if (establishment.is_manually_closed) {
+      return NextResponse.json({ error: "Estabelecimento fechado no momento" }, { status: 400 });
     }
 
     const subtotal = items.reduce(

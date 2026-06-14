@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import MenuItemForm from "@/components/dashboard/MenuItemForm";
-import ProFeatureUpsell from "@/components/dashboard/ProFeatureUpsell";
 import { useDashboardSearch } from "@/components/dashboard/DashboardSearch";
 import {
   EMPTY_MENU_ITEM_FORM,
@@ -17,9 +16,8 @@ import {
   groupMenuItemsByCategory,
 } from "@/lib/menu/group-by-category";
 import { supportsDailyMenuCategory } from "@/lib/establishment/categories";
-import { canUseDailyMenu } from "@/lib/plans/features";
 import { matchesSearchAny } from "@/lib/search/match-text";
-import type { EstablishmentCategory, PlanType } from "@/types/database";
+import type { EstablishmentCategory } from "@/types/database";
 
 function formatCurrency(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -29,17 +27,12 @@ export default function MenuManager({
   initialItems,
   devMock = false,
   establishmentCategory,
-  plan,
 }: {
   initialItems: MenuItemWithAddons[];
   devMock?: boolean;
   establishmentCategory: EstablishmentCategory;
-  plan: PlanType;
 }) {
-  const showDailyToggle =
-    supportsDailyMenuCategory(establishmentCategory) && canUseDailyMenu(plan);
-  const showDailyUpsell =
-    supportsDailyMenuCategory(establishmentCategory) && !canUseDailyMenu(plan);
+  const showDailyToggle = supportsDailyMenuCategory(establishmentCategory);
 
   const [items, setItems] = useState(initialItems);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -257,13 +250,6 @@ export default function MenuManager({
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Dados de exemplo — alterações locais até conectar um estabelecimento real.
         </p>
-      )}
-
-      {showDailyUpsell && (
-        <ProFeatureUpsell
-          title="Cardápio do dia — plano Pro"
-          description="Marque quais itens entram no menu de hoje e o bot só mostra essas opções no WhatsApp. No Básico, todos os itens ativos aparecem."
-        />
       )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

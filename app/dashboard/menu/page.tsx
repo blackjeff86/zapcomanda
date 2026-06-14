@@ -28,7 +28,6 @@ export default async function MenuPage() {
           initialItems={items}
           devMock={devMock}
           establishmentCategory={establishment.category}
-          plan={establishment.plan}
         />
       </Suspense>
     </>

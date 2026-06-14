@@ -8,6 +8,7 @@ import {
 } from "@/lib/menu/group-by-category";
 import { matchesSearchAny } from "@/lib/search/match-text";
 import { isPayOnDelivery } from "@/lib/payments/methods";
+import { isStoreOpenForOrders } from "@/lib/cardapio/storefront";
 import SearchInput from "@/components/shared/SearchInput";
 import PublicFooter from "@/components/public/PublicFooter";
 import PayOnDeliveryModal from "./PayOnDeliveryModal";
@@ -117,6 +118,10 @@ export default function CardapioClient({
   menuItems: MenuItem[];
 }) {
   const brand = establishment.primary_color;
+  const isOpen = isStoreOpenForOrders(
+    establishment.is_manually_closed,
+    establishment.order_cutoff_time
+  );
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -538,6 +543,14 @@ export default function CardapioClient({
         </div>
       </div>
 
+      {/* Closed banner */}
+      {!isOpen && (
+        <div className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <span className="font-semibold">Estabelecimento fechado.</span>{" "}
+          Você pode ver o cardápio, mas não é possível fazer pedidos agora.
+        </div>
+      )}
+
       {/* Items grouped by category */}
       <div className="px-4 pt-4 space-y-6">
         {visibleGroups.length === 0 && searchQuery.trim() ? (
@@ -574,8 +587,8 @@ export default function CardapioClient({
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => openModal(item)}
-                    className="flex w-full gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm text-left"
+                    onClick={() => { if (isOpen) openModal(item); }}
+                    className={`flex w-full gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm text-left ${!isOpen ? "cursor-default opacity-70" : ""}`}
                   >
                     {item.photo_url && (
                       <img
@@ -617,17 +630,23 @@ export default function CardapioClient({
                         >
                           {fmt(Number(item.price))}
                         </span>
-                        <div
-                          className="flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold text-white"
-                          style={{ backgroundColor: brand }}
-                        >
-                          {qty > 0 && (
-                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/25 text-xs font-bold">
-                              {qty}
-                            </span>
-                          )}
-                          <span>{qty > 0 ? "Adicionar mais" : "+ Adicionar"}</span>
-                        </div>
+                        {isOpen ? (
+                          <div
+                            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold text-white"
+                            style={{ backgroundColor: brand }}
+                          >
+                            {qty > 0 && (
+                              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/25 text-xs font-bold">
+                                {qty}
+                              </span>
+                            )}
+                            <span>{qty > 0 ? "Adicionar mais" : "+ Adicionar"}</span>
+                          </div>
+                        ) : (
+                          <div className="rounded-full bg-gray-200 px-3 py-1 text-sm font-semibold text-gray-500">
+                            Fechado
+                          </div>
+                        )}
                       </div>
                     </div>
                   </button>
