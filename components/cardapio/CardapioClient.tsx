@@ -118,10 +118,7 @@ export default function CardapioClient({
   menuItems: MenuItem[];
 }) {
   const brand = establishment.primary_color;
-  const isOpen = isStoreOpenForOrders(
-    establishment.is_manually_closed,
-    establishment.order_cutoff_time
-  );
+  const isOpen = isStoreOpenForOrders(establishment.is_manually_closed);
 
   const [searchQuery, setSearchQuery] = useState("");
 

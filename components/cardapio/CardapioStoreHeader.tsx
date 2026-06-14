@@ -35,10 +35,7 @@ export default function CardapioStoreHeader({
   const [logoError, setLogoError] = useState(false);
   const [showStatusInfo, setShowStatusInfo] = useState(false);
 
-  const isOpen = isStoreOpenForOrders(
-    establishment.is_manually_closed,
-    establishment.order_cutoff_time
-  );
+  const isOpen = isStoreOpenForOrders(establishment.is_manually_closed);
 
   const deliveryLabel = establishment.delivery_fee_enabled
     ? establishment.delivery_fee_amount > 0

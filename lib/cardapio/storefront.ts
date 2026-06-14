@@ -27,9 +27,6 @@ export function formatPhoneDisplay(phone: string): string {
   return phone;
 }
 
-export function isStoreOpenForOrders(
-  isManuallyClosed: boolean,
-  _orderCutoffTime?: string | null
-): boolean {
+export function isStoreOpenForOrders(isManuallyClosed: boolean): boolean {
   return !isManuallyClosed;
 }
