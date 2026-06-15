@@ -36,7 +36,7 @@ Evite restaurantes grandes do iFood como primeiro alvo — eles já pagam comiss
 ```
 Oi [Nome], vi que vocês fazem delivery direto.
 
-Montei um cardápio digital com pedido via WhatsApp — sem comissão por pedido. Aqui tem uma demo funcionando: [link do cardápio demo]
+Montei um cardápio digital próprio — sem comissão por pedido. Aqui tem uma demo funcionando: [link do cardápio demo]
 
 Posso mostrar em 10 min como ficaria pro [Nome da Loja]?
 ```
@@ -46,7 +46,7 @@ Posso mostrar em 10 min como ficaria pro [Nome da Loja]?
 ```
 Oi [Nome], vocês estão no iFood mas também aceitam pedido direto?
 
-Tenho uma ferramenta que permite cardápio digital próprio com pedido via WhatsApp — sem pagar comissão. Demo aqui: [link]
+Tenho uma ferramenta que permite cardápio digital próprio com pedidos diretos — sem pagar comissão. Demo aqui: [link]
 
 Vale 10 min de conversa?
 ```
