@@ -41,6 +41,7 @@ export default function OnboardingForm() {
     primary_color: "#16a34a",
     logo_url: "",
     plan: "basic",
+    tax_id: "",
     menu_items: [{ ...DEFAULT_MENU_ITEM }],
   });
 
@@ -280,6 +281,35 @@ export default function OnboardingForm() {
             <p className="mt-1 text-xs text-gray-500">
               Número que receberá os pedidos via bot
             </p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              CPF ou CNPJ
+            </label>
+            <input
+              type="text"
+              value={form.tax_id ?? ""}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
+                const fmt =
+                  digits.length <= 11
+                    ? digits
+                        .replace(/(\d{3})(\d)/, "$1.$2")
+                        .replace(/(\d{3})(\d)/, "$1.$2")
+                        .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
+                    : digits
+                        .replace(/(\d{2})(\d)/, "$1.$2")
+                        .replace(/(\d{3})(\d)/, "$1.$2")
+                        .replace(/(\d{3})(\d)/, "$1/$2")
+                        .replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+                updateField("tax_id", fmt);
+              }}
+              placeholder="000.000.000-00 ou 00.000.000/0000-00"
+              maxLength={18}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">Opcional — usado para emissão de nota fiscal futuramente</p>
           </div>
 
           <div>

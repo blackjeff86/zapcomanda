@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 
 type SubStatus = "trial" | "active" | "overdue" | "cancelled";
 
@@ -245,6 +245,8 @@ export default function ClientesPanel({
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [feedbacks, setFeedbacks] = useState<Record<string, string>>({});
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [planLoading, setPlanLoading] = useState<string | null>(null);
 
   const refresh = async () => {
     const res = await fetch("/api/admin/clients");
@@ -262,6 +264,29 @@ export default function ClientesPanel({
       () => setFeedbacks((p) => { const n = { ...p }; delete n[id]; return n; }),
       4000
     );
+  };
+
+  const changePlan = async (id: string, plan: "basic" | "pro") => {
+    setPlanLoading(id);
+    const res = await fetch(`/api/admin/clients/${id}/change-plan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan }),
+    });
+    const json = (await res.json()) as { error?: string; plan?: string };
+    if (res.ok) {
+      setClients((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, plan: json.plan ?? plan } : c))
+      );
+      setFeedbacks((p) => ({ ...p, [`plan-${id}`]: `Plano alterado para ${plan.toUpperCase()}` }));
+      setTimeout(
+        () => setFeedbacks((p) => { const n = { ...p }; delete n[`plan-${id}`]; return n; }),
+        3000
+      );
+    } else {
+      setFeedbacks((p) => ({ ...p, [`plan-${id}`]: json.error ?? "Erro ao migrar" }));
+    }
+    setPlanLoading(null);
   };
 
   const markPaid = async (id: string) => {
@@ -439,12 +464,15 @@ export default function ClientesPanel({
                 {visible.map((client) => {
                   const isCritical =
                     client.subscription_status === "overdue" && client.days_overdue >= 20;
+                  const isExpanded = expandedId === client.id;
                   return (
+                    <React.Fragment key={client.id}>
                     <tr
                       key={client.id}
-                      className={`hover:bg-surface-container-low transition-colors group ${
+                      onClick={() => setExpandedId(expandedId === client.id ? null : client.id)}
+                      className={`hover:bg-surface-container-low transition-colors group cursor-pointer ${
                         isCritical ? "bg-error-container/5" : ""
-                      }`}
+                      } ${expandedId === client.id ? "bg-surface-container-low" : ""}`}
                     >
                       {/* Establishment */}
                       <td className="px-6 py-4">
@@ -492,7 +520,7 @@ export default function ClientesPanel({
                       </td>
 
                       {/* Actions */}
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                         <ActionCell
                           client={client}
                           loadingId={loadingId}
@@ -502,6 +530,51 @@ export default function ClientesPanel({
                         />
                       </td>
                     </tr>
+                    {isExpanded && (
+                      <tr className="bg-surface-container-low border-b border-outline-variant">
+                        <td colSpan={6} className="px-8 py-5">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+                            <div>
+                              <p className="text-label-sm text-on-surface-variant mb-2 font-semibold uppercase tracking-wider">
+                                Migração de Plano
+                              </p>
+                              <div className="flex items-center gap-3">
+                                {(["basic", "pro"] as const).map((p) => {
+                                  const isCurrent = client.plan === p;
+                                  const isLoading = planLoading === client.id;
+                                  return (
+                                    <button
+                                      key={p}
+                                      type="button"
+                                      disabled={isCurrent || isLoading}
+                                      onClick={(e) => { e.stopPropagation(); changePlan(client.id, p); }}
+                                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                        isCurrent
+                                          ? "bg-primary text-on-primary cursor-default"
+                                          : "border border-outline-variant text-on-surface-variant hover:bg-primary/10 hover:text-primary hover:border-primary disabled:opacity-40"
+                                      }`}
+                                    >
+                                      {isCurrent ? `✓ ${p.toUpperCase()} (atual)` : `Migrar para ${p.toUpperCase()}`}
+                                    </button>
+                                  );
+                                })}
+                                {planLoading === client.id && (
+                                  <span className="text-xs text-on-surface-variant animate-pulse">Salvando...</span>
+                                )}
+                                {feedbacks[`plan-${client.id}`] && (
+                                  <span className="text-xs font-medium text-secondary">{feedbacks[`plan-${client.id}`]}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="sm:ml-auto text-right">
+                              <p className="text-label-sm text-on-surface-variant">Cadastro</p>
+                              <p className="text-body-sm font-medium text-on-surface">{fmtDate(client.created_at)}</p>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>

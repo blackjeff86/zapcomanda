@@ -37,6 +37,7 @@ export function getDevMockEstablishment(): Establishment {
     pix_key: "5511999887766",
     delivery_radius_km: null,
     pos_order_flow: "preparing",
+    tax_id: null,
     created_at: now,
     updated_at: now,
   };

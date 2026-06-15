@@ -33,6 +33,13 @@ export const onboardingSchema = z.object({
     .array(menuItemSchema)
     .min(1, "Adicione pelo menos um item ao cardápio"),
   plan: z.enum(["basic", "pro"]).default("basic"),
+  tax_id: z
+    .string()
+    .optional()
+    .refine(
+      (v) => !v || /^\d{11}$|^\d{14}$/.test(v.replace(/\D/g, "")),
+      "Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido"
+    ),
 });
 
 export type OnboardingFormData = z.infer<typeof onboardingSchema>;

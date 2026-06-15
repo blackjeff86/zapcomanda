@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { menu_items, logo_url, plan: selectedPlan, ...establishmentData } = parsed.data;
+    const { menu_items, logo_url, plan: selectedPlan, tax_id, ...establishmentData } = parsed.data;
 
     const baseSlug = generateSlug(establishmentData.name);
 
@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
         category: establishmentData.category,
         primary_color: establishmentData.primary_color,
         logo_url: logo_url || null,
-        plan: "basic",
+        plan: selectedPlan,
+        tax_id: tax_id?.replace(/\D/g, "") || null,
       })
       .select("id")
       .single();
