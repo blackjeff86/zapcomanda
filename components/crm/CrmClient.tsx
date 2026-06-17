@@ -67,6 +67,25 @@ const STATUS_GOOGLE: Record<string, { label: string; cor: string }> = {
   NAO_ENCONTRADO: { label: "? Não encontrado", cor: "bg-gray-100 text-gray-500" },
 };
 
+const CATEGORIAS: { label: string; keywords: string[] }[] = [
+  { label: "Marmita/Quentinha", keywords: ["marmita", "marmitex", "quentinha", "prato feito", "comida caseira", "refeição", "refeicao", "comida", "sabor"] },
+  { label: "Lanchonete",        keywords: ["lanchonete", "lanches", "lanche"] },
+  { label: "Pizzaria",          keywords: ["pizza", "pizzaria"] },
+  { label: "Hamburgueria",      keywords: ["burger", "hamburguer", "hamburgueria", "hambúrguer", "smash"] },
+  { label: "Doceria/Confeit.",  keywords: ["doceria", "doce", "confeitaria", "bolo", "bolos", "cake", "brigadeiro", "candy", "sobremesa", "atelier"] },
+  { label: "Açaíteria",         keywords: ["açaí", "acai", "acaiteria", "açaiteria"] },
+  { label: "Restaurante",       keywords: ["restaurante"] },
+];
+
+function extrairCategoria(nome: string | null): string {
+  if (!nome) return "Outros";
+  const lower = nome.toLowerCase();
+  for (const cat of CATEGORIAS) {
+    if (cat.keywords.some((kw) => lower.includes(kw))) return cat.label;
+  }
+  return "Outros";
+}
+
 const BAIRROS = [
   "Campo Grande",
   "Inhoaíba",
@@ -352,6 +371,7 @@ export default function CrmClient({
   const [leads, setLeads] = useState<Lead[]>(leadsIniciais);
   const [filtroStatus, setFiltroStatus] = useState("todos");
   const [filtroBairro, setFiltroBairro] = useState("todos");
+  const [filtroCat, setFiltroCat] = useState("todos");
   const [filtroGoogle, setFiltroGoogle] = useState("todos");
   const [filtroBusca, setFiltroBusca] = useState("");
   const [pagina, setPagina] = useState(1);
@@ -367,7 +387,7 @@ export default function CrmClient({
     return { total, novos, contatados, responderam, demos, fechados };
   }, [leads]);
 
-  // Contagem por bairro (sobre todos os leads, sem filtro de bairro)
+  // Contagem por bairro
   const contagemBairros = useMemo(() => {
     const counts: Record<string, number> = { todos: leads.length };
     for (const lead of leads) {
@@ -377,11 +397,22 @@ export default function CrmClient({
     return counts;
   }, [leads]);
 
+  // Contagem por categoria
+  const contagemCats = useMemo(() => {
+    const counts: Record<string, number> = { todos: leads.length };
+    for (const lead of leads) {
+      const c = extrairCategoria(lead.nome);
+      counts[c] = (counts[c] ?? 0) + 1;
+    }
+    return counts;
+  }, [leads]);
+
   // Filtros
   const leadsFiltrados = useMemo(() => {
     return leads.filter((l) => {
       const matchStatus = filtroStatus === "todos" || l.status === filtroStatus;
       const matchBairro = filtroBairro === "todos" || extrairBairro(l.local_endereco) === filtroBairro;
+      const matchCat    = filtroCat === "todos" || extrairCategoria(l.nome) === filtroCat;
       const matchGoogle =
         filtroGoogle === "todos" ||
         (filtroGoogle === "ativos"       && l.status_google === "ATIVO") ||
@@ -394,9 +425,9 @@ export default function CrmClient({
         l.nome.toLowerCase().includes(busca) ||
         (l.telefone ?? "").includes(busca) ||
         (l.local_endereco ?? "").toLowerCase().includes(busca);
-      return matchStatus && matchBairro && matchGoogle && matchBusca;
+      return matchStatus && matchBairro && matchCat && matchGoogle && matchBusca;
     });
-  }, [leads, filtroStatus, filtroBairro, filtroGoogle, filtroBusca]);
+  }, [leads, filtroStatus, filtroBairro, filtroCat, filtroGoogle, filtroBusca]);
 
   // Paginação
   const totalPaginas = Math.ceil(leadsFiltrados.length / POR_PAGINA);
@@ -411,6 +442,11 @@ export default function CrmClient({
 
   function handleFiltroStatus(status: string) {
     setFiltroStatus(status);
+    setPagina(1);
+  }
+
+  function handleFiltroCat(cat: string) {
+    setFiltroCat(cat);
     setPagina(1);
   }
 
@@ -474,6 +510,40 @@ export default function CrmClient({
           onChange={(e) => handleBusca(e.target.value)}
           className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         />
+
+        {/* Filtro por categoria */}
+        <div>
+          <p className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wide">Categoria</p>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            <button
+              onClick={() => handleFiltroCat("todos")}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                filtroCat === "todos"
+                  ? "bg-orange-600 text-white"
+                  : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              Todos ({leads.length})
+            </button>
+            {[...CATEGORIAS.map((c) => c.label), "Outros"].map((cat) => {
+              const count = contagemCats[cat] ?? 0;
+              if (count === 0) return null;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => handleFiltroCat(cat)}
+                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    filtroCat === cat
+                      ? "bg-orange-600 text-white"
+                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {cat} ({count})
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Filtro por bairro */}
         <div>
