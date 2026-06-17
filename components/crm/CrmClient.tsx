@@ -240,7 +240,7 @@ function LeadCard({
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-semibold text-gray-900 text-sm leading-tight truncate">{lead.nome}</p>
+            <p className="font-semibold text-gray-900 text-sm leading-tight">{lead.nome}</p>
             {lead.telefone && (
               <p className="text-xs text-gray-500 mt-0.5">{lead.telefone}</p>
             )}
@@ -433,7 +433,7 @@ export default function CrmClient({
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between">
           <div>
             <h1 className="font-bold text-gray-900">Pipeline ZapComanda</h1>
             <p className="text-xs text-gray-400">{userName}</p>
@@ -444,7 +444,7 @@ export default function CrmClient({
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
           {[
@@ -570,7 +570,7 @@ export default function CrmClient({
             </div>
 
             {/* Grid de cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {leadsPagina.map((lead) => (
                 <LeadCard key={lead.id} lead={lead} onUpdate={handleUpdate} />
               ))}
