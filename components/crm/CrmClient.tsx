@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import CrmMaterialPanel from "./CrmMaterialPanel";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -373,6 +374,7 @@ export default function CrmClient({
   const [filtroBairro, setFiltroBairro] = useState("todos");
   const [filtroCat, setFiltroCat] = useState("todos");
   const [filtroGoogle, setFiltroGoogle] = useState("todos");
+  const [painelAberto, setPainelAberto] = useState(false);
   const [filtroBusca, setFiltroBusca] = useState("");
   const [pagina, setPagina] = useState(1);
 
@@ -467,6 +469,8 @@ export default function CrmClient({
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {painelAberto && <CrmMaterialPanel onFechar={() => setPainelAberto(false)} />}
+
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between">
@@ -474,9 +478,17 @@ export default function CrmClient({
             <h1 className="font-bold text-gray-900">Pipeline ZapComanda</h1>
             <p className="text-xs text-gray-400">{userName}</p>
           </div>
-          <span className="text-xs bg-green-50 text-green-700 font-medium px-2 py-1 rounded-full">
-            {stats.total} leads
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs bg-green-50 text-green-700 font-medium px-2 py-1 rounded-full">
+              {stats.total} leads
+            </span>
+            <button
+              onClick={() => setPainelAberto(true)}
+              className="text-xs bg-gray-800 text-white font-medium px-3 py-1.5 rounded-full hover:bg-gray-700 transition-colors"
+            >
+              📋 Scripts
+            </button>
+          </div>
         </div>
       </div>
 
