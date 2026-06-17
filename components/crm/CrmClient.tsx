@@ -56,6 +56,24 @@ const TIPOS_CONTATO = [
 
 const POR_PAGINA = 30;
 
+const BAIRROS = [
+  "Campo Grande",
+  "Inhoaíba",
+  "Cesarão",
+  "Antares",
+  "Santa Cruz",
+  "Sepetiba",
+];
+
+function extrairBairro(endereco: string | null): string {
+  if (!endereco) return "Outros";
+  const lower = endereco.toLowerCase();
+  for (const b of BAIRROS) {
+    if (lower.includes(b.toLowerCase())) return b;
+  }
+  return "Outros";
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function whatsappLink(telefone: string): string {
@@ -286,6 +304,7 @@ export default function CrmClient({
 }) {
   const [leads, setLeads] = useState<Lead[]>(leadsIniciais);
   const [filtroStatus, setFiltroStatus] = useState("todos");
+  const [filtroBairro, setFiltroBairro] = useState("todos");
   const [filtroBusca, setFiltroBusca] = useState("");
   const [pagina, setPagina] = useState(1);
 
@@ -300,19 +319,30 @@ export default function CrmClient({
     return { total, novos, contatados, responderam, demos, fechados };
   }, [leads]);
 
+  // Contagem por bairro (sobre todos os leads, sem filtro de bairro)
+  const contagemBairros = useMemo(() => {
+    const counts: Record<string, number> = { todos: leads.length };
+    for (const lead of leads) {
+      const b = extrairBairro(lead.local_endereco);
+      counts[b] = (counts[b] ?? 0) + 1;
+    }
+    return counts;
+  }, [leads]);
+
   // Filtros
   const leadsFiltrados = useMemo(() => {
     return leads.filter((l) => {
       const matchStatus = filtroStatus === "todos" || l.status === filtroStatus;
+      const matchBairro = filtroBairro === "todos" || extrairBairro(l.local_endereco) === filtroBairro;
       const busca = filtroBusca.toLowerCase();
       const matchBusca =
         !busca ||
         l.nome.toLowerCase().includes(busca) ||
         (l.telefone ?? "").includes(busca) ||
         (l.local_endereco ?? "").toLowerCase().includes(busca);
-      return matchStatus && matchBusca;
+      return matchStatus && matchBairro && matchBusca;
     });
-  }, [leads, filtroStatus, filtroBusca]);
+  }, [leads, filtroStatus, filtroBairro, filtroBusca]);
 
   // Paginação
   const totalPaginas = Math.ceil(leadsFiltrados.length / POR_PAGINA);
@@ -327,6 +357,11 @@ export default function CrmClient({
 
   function handleFiltroStatus(status: string) {
     setFiltroStatus(status);
+    setPagina(1);
+  }
+
+  function handleFiltroBairro(bairro: string) {
+    setFiltroBairro(bairro);
     setPagina(1);
   }
 
@@ -380,6 +415,30 @@ export default function CrmClient({
           onChange={(e) => handleBusca(e.target.value)}
           className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         />
+
+        {/* Filtro por bairro */}
+        <div>
+          <p className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wide">Região</p>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {[{ key: "todos", label: "Todos" }, ...BAIRROS.map((b) => ({ key: b, label: b }))].map(({ key, label }) => {
+              const count = contagemBairros[key] ?? 0;
+              if (key !== "todos" && count === 0) return null;
+              return (
+                <button
+                  key={key}
+                  onClick={() => handleFiltroBairro(key)}
+                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    filtroBairro === key
+                      ? "bg-green-700 text-white"
+                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {label} ({count})
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Filtro de status */}
         <div className="flex gap-2 overflow-x-auto pb-1">
