@@ -29,7 +29,6 @@ export default function CrmLogin() {
       });
 
       if (res.ok) {
-        const { nome } = await res.json();
         router.push("/crm");
         router.refresh();
         return;
