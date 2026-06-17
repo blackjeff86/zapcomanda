@@ -10,7 +10,9 @@
     "leads": "node scripts/capturar-leads.js",
     "leads:manual": "node scripts/capturar-leads.js --manual",
     "leads:relatorio": "node scripts/capturar-leads.js --relatorio",
-    "leads:importar": "node scripts/importar-leads-supabase.js"
+    "leads:importar": "node scripts/importar-leads-supabase.js",
+    "leads:validar": "node scripts/validar-leads.js",
+    "leads:validar:todos": "node scripts/validar-leads.js --todos"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

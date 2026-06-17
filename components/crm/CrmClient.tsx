@@ -17,6 +17,10 @@ type Lead = {
   contatado_em: string | null;
   respondeu: boolean | null;
   notas: string | null;
+  status_google: string | null;
+  instagram_url: string | null;
+  website_url: string | null;
+  verificado_em: string | null;
 };
 
 type ContatoForm = {
@@ -55,6 +59,13 @@ const TIPOS_CONTATO = [
 ];
 
 const POR_PAGINA = 30;
+
+const STATUS_GOOGLE: Record<string, { label: string; cor: string }> = {
+  ATIVO:          { label: "✓ Ativo",         cor: "bg-green-100 text-green-700" },
+  FECHADO_TEMP:   { label: "⚠ Temp. fechado", cor: "bg-yellow-100 text-yellow-700" },
+  ENCERRADO:      { label: "✗ Encerrado",     cor: "bg-red-100 text-red-700" },
+  NAO_ENCONTRADO: { label: "? Não encontrado", cor: "bg-gray-100 text-gray-500" },
+};
 
 const BAIRROS = [
   "Campo Grande",
@@ -258,8 +269,15 @@ function LeadCard({
           )}
         </div>
 
+        {/* Badge de verificação Google */}
+        {lead.status_google && STATUS_GOOGLE[lead.status_google] && (
+          <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_GOOGLE[lead.status_google].cor}`}>
+            {STATUS_GOOGLE[lead.status_google].label}
+          </span>
+        )}
+
         {/* Ações */}
-        <div className="flex gap-2 pt-1">
+        <div className="flex gap-2 pt-1 flex-wrap">
           <button
             onClick={() => setModalAberto(true)}
             className="flex-1 py-2 rounded-xl bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition-colors"
@@ -274,6 +292,26 @@ function LeadCard({
               className="px-3 py-2 rounded-xl bg-green-50 text-green-700 text-xs font-medium hover:bg-green-100 transition-colors"
             >
               WhatsApp
+            </a>
+          )}
+          {lead.instagram_url ? (
+            <a
+              href={lead.instagram_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-2 rounded-xl bg-pink-50 text-pink-600 text-xs font-medium hover:bg-pink-100 transition-colors"
+            >
+              Instagram
+            </a>
+          ) : (
+            <a
+              href={`https://www.google.com/search?q=${encodeURIComponent(`"${lead.nome}" instagram`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-2 rounded-xl bg-gray-50 text-gray-500 text-xs font-medium hover:bg-gray-100 transition-colors"
+              title="Buscar Instagram manualmente"
+            >
+              Buscar IG
             </a>
           )}
         </div>
@@ -305,6 +343,7 @@ export default function CrmClient({
   const [leads, setLeads] = useState<Lead[]>(leadsIniciais);
   const [filtroStatus, setFiltroStatus] = useState("todos");
   const [filtroBairro, setFiltroBairro] = useState("todos");
+  const [filtroGoogle, setFiltroGoogle] = useState("todos");
   const [filtroBusca, setFiltroBusca] = useState("");
   const [pagina, setPagina] = useState(1);
 
@@ -334,15 +373,21 @@ export default function CrmClient({
     return leads.filter((l) => {
       const matchStatus = filtroStatus === "todos" || l.status === filtroStatus;
       const matchBairro = filtroBairro === "todos" || extrairBairro(l.local_endereco) === filtroBairro;
+      const matchGoogle =
+        filtroGoogle === "todos" ||
+        (filtroGoogle === "ativos"       && l.status_google === "ATIVO") ||
+        (filtroGoogle === "encerrados"   && (l.status_google === "ENCERRADO" || l.status_google === "NAO_ENCONTRADO")) ||
+        (filtroGoogle === "nao_verif"    && !l.status_google) ||
+        (filtroGoogle === "tem_ig"       && !!l.instagram_url);
       const busca = filtroBusca.toLowerCase();
       const matchBusca =
         !busca ||
         l.nome.toLowerCase().includes(busca) ||
         (l.telefone ?? "").includes(busca) ||
         (l.local_endereco ?? "").toLowerCase().includes(busca);
-      return matchStatus && matchBairro && matchBusca;
+      return matchStatus && matchBairro && matchGoogle && matchBusca;
     });
-  }, [leads, filtroStatus, filtroBairro, filtroBusca]);
+  }, [leads, filtroStatus, filtroBairro, filtroGoogle, filtroBusca]);
 
   // Paginação
   const totalPaginas = Math.ceil(leadsFiltrados.length / POR_PAGINA);
@@ -362,6 +407,11 @@ export default function CrmClient({
 
   function handleFiltroBairro(bairro: string) {
     setFiltroBairro(bairro);
+    setPagina(1);
+  }
+
+  function handleFiltroGoogle(v: string) {
+    setFiltroGoogle(v);
     setPagina(1);
   }
 
@@ -439,6 +489,34 @@ export default function CrmClient({
             })}
           </div>
         </div>
+
+        {/* Filtro de verificação */}
+        {leads.some((l) => l.status_google) && (
+          <div>
+            <p className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wide">Verificação</p>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {[
+                { key: "todos",      label: "Todos" },
+                { key: "ativos",     label: "✓ Ativos" },
+                { key: "tem_ig",     label: "Instagram encontrado" },
+                { key: "encerrados", label: "✗ Encerrados" },
+                { key: "nao_verif",  label: "Não verificados" },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => handleFiltroGoogle(key)}
+                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    filtroGoogle === key
+                      ? "bg-indigo-700 text-white"
+                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Filtro de status */}
         <div className="flex gap-2 overflow-x-auto pb-1">
