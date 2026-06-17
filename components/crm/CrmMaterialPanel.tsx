@@ -150,7 +150,7 @@ O plano começa em R$ 49 por mês. É menos do que 2 pedidos perdidos pra comiss
             { objecao: "Vou pensar", resposta: "Claro. O que faria você decidir ainda essa semana? Tem alguma dúvida que eu posso responder agora?" },
           ].map((item) => (
             <div key={item.objecao} className="bg-gray-50 rounded-lg p-2.5">
-              <p className="text-xs font-semibold text-red-600 mb-1">"{item.objecao}"</p>
+              <p className="text-xs font-semibold text-red-600 mb-1">&ldquo;{item.objecao}&rdquo;</p>
               <p className="text-xs text-gray-700">{item.resposta}</p>
             </div>
           ))}
