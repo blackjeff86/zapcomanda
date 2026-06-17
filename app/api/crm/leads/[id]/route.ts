@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { verificarToken, findCrmUser } from "@/lib/crm/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isCrmUser } from "@/lib/crm/auth";
 
 const bodySchema = z.object({
   status: z
@@ -22,12 +22,12 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const cookieStore = await cookies();
+  const token = cookieStore.get("crm_session")?.value;
+  const telefone = token ? verificarToken(token) : null;
+  const user = telefone ? findCrmUser(telefone) : null;
 
-  if (!user || !isCrmUser(user.email)) {
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
@@ -39,7 +39,6 @@ export async function PATCH(
 
   const admin = createAdminClient();
   const { data, error } = await admin
-    .schema("zapcomanda")
     .from("leads")
     .update({ ...parsed.data, updated_at: new Date().toISOString() })
     .eq("id", params.id)
