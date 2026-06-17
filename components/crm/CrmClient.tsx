@@ -314,6 +314,15 @@ function LeadCard({
               Buscar IG
             </a>
           )}
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lead.nome} ${lead.local_endereco ?? "Rio de Janeiro"}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-2 rounded-xl bg-blue-50 text-blue-600 text-xs font-medium hover:bg-blue-100 transition-colors"
+            title="Ver no Google Maps"
+          >
+            Maps
+          </a>
         </div>
       </div>
 
