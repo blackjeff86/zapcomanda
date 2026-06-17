@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerar logo WhatsApp — ZapComanda</title>
+  <style>
+    body { font-family: system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f0fdf4; color: #14532d; }
+    h1 { margin-bottom: 8px; }
+    p { color: #166534; margin-bottom: 24px; }
+    canvas { border-radius: 50%; box-shadow: 0 4px 24px rgba(0,0,0,.15); }
+    button { margin-top: 20px; padding: 12px 28px; background: #16a34a; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+    button:hover { background: #15803d; }
+  </style>
+</head>
+<body>
+  <h1>ZapComanda — Logo WhatsApp</h1>
+  <p>640 × 640 px · recortado em círculo pelo WhatsApp</p>
+  <canvas id="c" width="640" height="640"></canvas>
+  <button onclick="download()">Baixar PNG</button>
+
+  <script>
+    const SVG_SIZE = 640;
+    const ICON_SIZE = 400;
+    const OFFSET = (SVG_SIZE - ICON_SIZE) / 2; // 120
+
+    const svgSrc = `<svg xmlns="http://www.w3.org/2000/svg" width="${SVG_SIZE}" height="${SVG_SIZE}">
+  <rect width="${SVG_SIZE}" height="${SVG_SIZE}" fill="white"/>
+  <svg x="${OFFSET}" y="${OFFSET}" width="${ICON_SIZE}" height="${ICON_SIZE}" viewBox="0 0 48 48" fill="none">
+    <defs>
+      <linearGradient id="front" x1="11" y1="7" x2="37" y2="41" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#22c55e"/>
+        <stop offset="1" stop-color="#15803d"/>
+      </linearGradient>
+    </defs>
+    <rect x="13" y="13" width="26" height="30" rx="5" fill="#14532d" transform="rotate(-9 26 28)"/>
+    <rect x="12" y="10" width="26" height="30" rx="5" fill="#166534" transform="rotate(5 25 25)"/>
+    <rect x="11" y="7" width="26" height="34" rx="5.5" fill="url(#front)"/>
+    <path d="M31.5 7H37V12.5L31.5 7Z" fill="#4ade80" fill-opacity="0.45"/>
+    <path d="M31.5 7L37 12.5H31.5V7Z" fill="white" fill-opacity="0.18"/>
+    <line x1="16" y1="32" x2="30" y2="32" stroke="white" stroke-opacity="0.22" stroke-width="1.6" stroke-linecap="round"/>
+    <line x1="16" y1="35.5" x2="26" y2="35.5" stroke="white" stroke-opacity="0.16" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M14.5 17.5H34.5L18 28.5H33" stroke="#14532d" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.35" transform="translate(0.7 0.8)"/>
+    <path d="M14 16.5H34L17.5 28H33" stroke="white" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</svg>`;
+
+    const blob = new Blob([svgSrc], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.getElementById('c');
+      const ctx = canvas.getContext('2d');
+      // fundo branco explícito (evita transparência)
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, SVG_SIZE, SVG_SIZE);
+      ctx.drawImage(img, 0, 0, SVG_SIZE, SVG_SIZE);
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+
+    function download() {
+      const canvas = document.getElementById('c');
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = 'zapcomanda-whatsapp-profile.png';
+      a.click();
+    }
+  </script>
+</body>
+</html>
