@@ -37,14 +37,40 @@ function Script({ titulo, texto }: { titulo: string; texto: string }) {
   );
 }
 
+const SITE_URL  = "https://zapcomanda.vercel.app";
+const DEMO_URL  = "https://zapcomanda.vercel.app/cardapio/restaurante-teste";
+
 function AbaWhatsApp() {
   return (
     <div className="space-y-4">
+
+      {/* Links rápidos */}
+      <div className="bg-green-50 border border-green-100 rounded-xl p-3 space-y-2">
+        <p className="text-xs font-semibold text-green-800 mb-1">🔗 Links para usar nas mensagens</p>
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <p className="text-xs font-medium text-gray-700">Site oficial</p>
+            <p className="text-xs text-gray-500 break-all">{SITE_URL}</p>
+          </div>
+          <BotaoCopiar texto={SITE_URL} />
+        </div>
+        <div className="border-t border-green-100" />
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <p className="text-xs font-medium text-gray-700">Cardápio demo (restaurante teste)</p>
+            <p className="text-xs text-gray-500 break-all">{DEMO_URL}</p>
+          </div>
+          <BotaoCopiar texto={DEMO_URL} />
+        </div>
+      </div>
+
       <Script
         titulo="Abordagem fria — Versão curta (recomendada)"
         texto={`Oi [Nome]! Vi que vocês fazem delivery por aí 🍱
 
 Montei um cardápio digital próprio para negócios como o de vocês — sem cobrar comissão por pedido. O cliente acessa o link, escolhe os itens e paga o Pix direto.
+
+Olha como funciona: ${DEMO_URL}
 
 Posso mostrar como ficaria pro [Nome da Loja] em 10 minutinhos?`}
       />
@@ -54,7 +80,9 @@ Posso mostrar como ficaria pro [Nome da Loja] em 10 minutinhos?`}
 
 Tenho uma ferramenta que deixa você ter cardápio digital próprio — pedidos organizados e Pix na hora, sem pagar taxa por pedido. Serve como canal direto paralelo ao iFood.
 
-Vale uma demo rápida de 10 min?`}
+Veja uma demo funcionando: ${DEMO_URL}
+
+Vale uma conversa rápida de 10 min?`}
       />
       <Script
         titulo="Abordagem fria — Marmiteiros / Quentinheiras"
@@ -62,13 +90,15 @@ Vale uma demo rápida de 10 min?`}
 
 Trabalho com um sistema que organiza seus pedidos automaticamente — cliente escolhe no cardápio, já calcula o total e paga o Pix. Sem ficar mandando mensagem para confirmar item por item.
 
+Dá uma olhada como fica: ${DEMO_URL}
+
 Posso mostrar funcionando? Leva 10 min.`}
       />
       <Script
         titulo="Follow-up — 3 dias sem resposta"
         texto={`Oi [Nome], tudo bem? Mandei uma mensagem outro dia sobre o cardápio digital.
 
-Caso queira dar uma olhada, montei uma demo aqui: [link do cardápio demo]
+Montei uma demo aqui pra você ver como funciona: ${DEMO_URL}
 
 Qualquer coisa, só falar!`}
       />
@@ -77,6 +107,8 @@ Qualquer coisa, só falar!`}
         texto={`Oi [Nome]! Só passando para deixar o contato.
 
 Se em algum momento quiser conhecer o ZapComanda — cardápio digital sem comissão por pedido — é só me chamar.
+
+Site: ${SITE_URL}
 
 Boa semana! 👊`}
       />
@@ -88,9 +120,9 @@ Para quem faz delivery e cansa de receber pedido por mensagem de voz, foto e tex
 
 É um cardápio digital próprio: cliente acessa o link, escolhe os itens, paga o Pix e o pedido já chega organizado pra você. Sem comissão por pedido.
 
-Planos a partir de R$ 49/mês. Tem versão de teste pra conhecer.
+Planos a partir de R$ 49/mês. Tem versão de teste pra conhecer agora mesmo: ${DEMO_URL}
 
-Quem quiser ver uma demo rápida, me chama aqui ou acessa: [link]
+Quem quiser ver uma demo rápida, me chama aqui!
 
 Qualquer dúvida, só perguntar! 🍕🥡`}
       />
@@ -106,6 +138,8 @@ Resumo do que vimos:
 
 O plano Basic é R$ 49/mês. Para fechar ainda essa semana, consigo [oferta especial / primeiro mês grátis].
 
+Site: ${SITE_URL}
+
 Qual seria o melhor momento para vocês começarem?`}
       />
     </div>
@@ -115,8 +149,10 @@ Qual seria o melhor momento para vocês começarem?`}
 function AbaLigacao() {
   return (
     <div className="space-y-4">
-      <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700 font-medium">
-        Estrutura: máx. 8 minutos · Tenha o link da demo em mãos antes de ligar
+      <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700 space-y-1">
+        <p className="font-semibold">Estrutura: máx. 8 minutos · Tenha o link da demo em mãos antes de ligar</p>
+        <p className="font-mono break-all">{DEMO_URL}</p>
+        <BotaoCopiar texto={DEMO_URL} />
       </div>
       <Script
         titulo="[0:00 – 0:30] Abertura"
@@ -160,6 +196,8 @@ O plano começa em R$ 49 por mês. É menos do que 2 pedidos perdidos pra comiss
         titulo="[6:30 – 8:00] Fechamento"
         texto={`"Posso te mandar o link de uma demo funcionando agora pelo WhatsApp?
 Você vê em 5 minutos e me fala o que achou."
+
+Link da demo: ${DEMO_URL}
 
 — Se quiser demo ao vivo —
 "Que tal a gente fazer uma videochamada rápida de 10 minutos? Posso mostrar na tela como ficaria o cardápio de vocês. Quando você tem um espaço hoje ou amanhã?"`}
