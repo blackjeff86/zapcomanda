@@ -488,6 +488,15 @@ export default function CrmClient({
             >
               📋 Scripts
             </button>
+            <button
+              onClick={async () => {
+                await fetch("/api/crm/logout", { method: "POST" });
+                window.location.href = "/crm/login";
+              }}
+              className="text-xs bg-red-50 text-red-600 font-medium px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors"
+            >
+              Sair
+            </button>
           </div>
         </div>
       </div>

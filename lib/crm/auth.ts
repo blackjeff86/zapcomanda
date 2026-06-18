@@ -3,6 +3,7 @@ import { createHmac } from "crypto";
 export const CRM_USERS = [
   { nome: "Jefferson", telefone: "21994622697" },
   { nome: "Deborah",   telefone: "21998081325" },
+  { nome: "Deborah",   telefone: "21974672579" },
   { nome: "Gerson",    telefone: "21968890510" },
 ];
 
