@@ -94,6 +94,8 @@ const BAIRROS = [
   "Antares",
   "Santa Cruz",
   "Sepetiba",
+  "Bangu",
+  "Santíssimo",
 ];
 
 function extrairBairro(endereco: string | null): string {

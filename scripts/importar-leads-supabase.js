@@ -77,6 +77,24 @@ async function inserirBatch(batch) {
   }
 }
 
+async function buscarNomesExistentes() {
+  const nomes = new Set();
+  let offset = 0;
+  const limit = 1000;
+  while (true) {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/leads?select=nome&limit=${limit}&offset=${offset}`,
+      { headers: { ...HEADERS, 'Accept-Profile': 'zapcomanda' } }
+    );
+    if (!res.ok) throw new Error(`Erro ao buscar existentes: HTTP ${res.status}`);
+    const rows = await res.json();
+    for (const r of rows) nomes.add(r.nome.toLowerCase().trim());
+    if (rows.length < limit) break;
+    offset += limit;
+  }
+  return nomes;
+}
+
 async function main() {
   if (!fs.existsSync(LEADS_FILE)) {
     console.error('\n❌ docs/leads.md não encontrado.\n');
@@ -84,14 +102,27 @@ async function main() {
   }
 
   const content = fs.readFileSync(LEADS_FILE, 'utf-8');
-  const leads   = parseLeadsMd(content);
+  const todos   = parseLeadsMd(content);
 
-  if (leads.length === 0) {
+  if (todos.length === 0) {
     console.log('\nNenhum lead encontrado no arquivo.\n');
     return;
   }
 
-  console.log(`\nImportando ${leads.length} leads para o Supabase...\n`);
+  console.log(`\n🔍 Verificando duplicatas no banco...`);
+  const existentes = await buscarNomesExistentes();
+  console.log(`   ${existentes.size} leads já cadastrados.`);
+
+  const leads = todos.filter(l => !existentes.has(l.nome.toLowerCase().trim()));
+  const pulados = todos.length - leads.length;
+
+  if (leads.length === 0) {
+    console.log(`\n✅ Nenhum lead novo para importar (${pulados} já existiam).\n`);
+    return;
+  }
+
+  console.log(`   ${pulados} já existiam — pulados.`);
+  console.log(`\nImportando ${leads.length} leads novos...\n`);
 
   const BATCH = 50;
   let total = 0;
@@ -107,7 +138,7 @@ async function main() {
     }
   }
 
-  console.log(`\n✅ ${total} leads importados com sucesso!\n`);
+  console.log(`\n✅ ${total} leads novos importados com sucesso!\n`);
 }
 
 main().catch(console.error);
