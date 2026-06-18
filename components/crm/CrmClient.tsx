@@ -49,6 +49,7 @@ const RESULTADOS = [
   { value: "demo",            label: "📅 Demo agendada",            status: "demo",          respondeu: true,  interesse: true },
   { value: "fechado",         label: "✅ Fechou! Novo cliente!",    status: "fechado",       respondeu: true,  interesse: true },
   { value: "follow_up",       label: "🔄 Follow-up pendente",       status: "follow_up",     respondeu: null,  interesse: null },
+  { value: "nao_existe",      label: "🏚️ Estabelecimento fechado/não existe", status: "sem_interesse", respondeu: false, interesse: false },
 ];
 
 const TIPOS_CONTATO = [
